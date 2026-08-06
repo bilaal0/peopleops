@@ -23,6 +23,7 @@ export default [
   route("documents/s3-download", "routes/documents/s3-download.jsx"),
   route("documents/verify", "routes/documents/verify.jsx"),
   route("documents/upload", "routes/documents/upload.jsx"),
+  route("documents/delete", "routes/documents/delete.jsx"),
   route("tenancies/:id/evidence-bundle", "routes/tenancies/evidence-bundle.jsx"),
 
   // ── Notes API (no layout shell — fetcher-only routes) ──────────────────────

@@ -20,7 +20,7 @@ const documentSchema = new Schema(
     // This single pattern covers all modules without needing separate schemas.
     entityType: {
       type: String,
-      enum: ["landlord", "property", "tenant", "tenancy", "expense", "disbursement", "maintenance_job"],
+      enum: ["landlord", "property", "tenant", "tenancy", "expense", "disbursement", "maintenance_job", "general"],
       required: true,
       // expense:         receipt/invoice for an AgencyExpense record
       // disbursement:    attachment for a Disbursement record

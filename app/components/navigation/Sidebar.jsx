@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   LogOut,
   CalendarDays,
+  FileText,
 } from "lucide-react";
 import { getAgencyLogoUrl } from "../../utils/agencyLogo.js";
 
@@ -41,6 +42,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       ],
     },
     { name: "Rota System", href: "/rota", icon: CalendarDays },
+    { name: "Documents", href: "/documents", icon: FileText },
   ];
 
   const renderNavItems = () => {

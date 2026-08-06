@@ -1,7 +1,7 @@
 // routes/documents/upload.jsx
 // Single unified upload route used by ALL modules.
 // POST /documents/upload
-// Accepts: entityType, entityId, docType, expiryDate (optional), notes (optional), file
+// Accepts: entityType, entityId (optional), docType, expiryDate (optional), notes (optional), file
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { data } from "react-router";
 import { connect } from "../../config/db.server.js";
@@ -13,9 +13,6 @@ import {
   fileToBuffer,
 } from "../../utils/s3.server.js";
 import { DocumentType } from "../../models/documentType.server.js";
-import { Property } from "../../models/property.server.js";
-import { User } from "../../models/user.server.js";
-import { Tenancy } from "../../models/tenancy.server.js";
 import { logDocumentUploaded } from "../../utils/activityLog.server.js";
 
 export async function action({ request }) {
@@ -26,8 +23,9 @@ export async function action({ request }) {
   }
 
   const formData   = await request.formData();
-  const entityType = formData.get("entityType");
-  const entityId   = formData.get("entityId");
+  const entityType = formData.get("entityType") || "general";
+  // For general docs, entityId defaults to the agency ID as a grouping key
+  const entityId   = formData.get("entityId") || user.agencyId?.toString();
   const docType    = formData.get("docType");
   const expiryDate = formData.get("expiryDate") || null;
   const issueDate  = formData.get("issueDate") || null;
@@ -35,8 +33,12 @@ export async function action({ request }) {
   const notes      = formData.get("notes") || null;
   const file       = formData.get("file");
 
-  if (!entityType || !entityId || !docType) {
-    return data({ error: "entityType, entityId, and docType are required." }, { status: 400 });
+  if (!entityId) {
+    return data({ error: "Could not resolve entity ID." }, { status: 400 });
+  }
+
+  if (!docType) {
+    return data({ error: "docType is required." }, { status: 400 });
   }
 
   if (!file || typeof file === "string" || file.size === 0) {
@@ -62,22 +64,9 @@ export async function action({ request }) {
 
   // ── Save Document record ──────────────────────────────────────────────────
   await connect();
-  
-  const docTypeDoc = await DocumentType.findById(docType).lean();
 
-  let documentAgencyId = user.agencyId;
-  if (!documentAgencyId) {
-    if (entityType === "property") {
-      const p = await Property.findById(entityId).lean();
-      documentAgencyId = p?.agencyId;
-    } else if (entityType === "tenant" || entityType === "landlord") {
-      const u = await User.findById(entityId).lean();
-      documentAgencyId = u?.agencyId;
-    } else if (entityType === "tenancy") {
-      const t = await Tenancy.findById(entityId).lean();
-      documentAgencyId = t?.agencyId;
-    }
-  }
+  const docTypeDoc = await DocumentType.findById(docType).lean();
+  const documentAgencyId = user.agencyId;
 
   // Auto-calculate expiry from issueDate + expiryDays if available
   let finalExpiryDate = expiryDate || null;
@@ -103,7 +92,6 @@ export async function action({ request }) {
     notes,
   });
 
-  // ── Specific logic for EPC Sync ───────────────────────────────────────────
   await logDocumentUploaded(
     {
       ...doc.toObject(),
@@ -111,16 +99,6 @@ export async function action({ request }) {
     },
     user
   );
-
-  if (entityType === "property" && docTypeDoc?.key === "epc") {
-    const epcRating = formData.get("epcRating");
-    if (epcRating) {
-      await Property.findByIdAndUpdate(entityId, {
-        epcRating,
-        epcExpiryDate: expiryDate || null, // Sync the expiry date as well
-      });
-    }
-  }
 
   return data({
     success:    true,
