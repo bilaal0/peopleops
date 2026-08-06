@@ -24,22 +24,25 @@ export async function action({ request }) {
 
   const formData   = await request.formData();
   const entityType = formData.get("entityType") || "general";
-  // For general docs, entityId defaults to the agency ID as a grouping key
-  const entityId   = formData.get("entityId") || user.agencyId?.toString();
-  const docType    = formData.get("docType");
+
+  // entityId: form value → agencyId → userId → "general" (last resort string)
+  const rawEntityId = (formData.get("entityId") || "").trim();
+  const entityId    = rawEntityId || user.agencyId?.toString() || user.userId || "general";
+
+  // agencyId for the Document record
+  const rawAgencyId      = (formData.get("agencyId") || "").trim();
+  const resolvedAgencyId = rawAgencyId || user.agencyId?.toString() || null;
+
   const expiryDate = formData.get("expiryDate") || null;
-  const issueDate  = formData.get("issueDate") || null;
-  const title      = formData.get("title") || null;
-  const notes      = formData.get("notes") || null;
+  const issueDate  = formData.get("issueDate")  || null;
+  const title      = formData.get("title")      || null;
+  const notes      = formData.get("notes")      || null;
   const file       = formData.get("file");
 
-  if (!entityId) {
-    return data({ error: "Could not resolve entity ID." }, { status: 400 });
-  }
+  // docType: only pass to Mongoose when it is a non-empty string
+  const rawDocType = (formData.get("docType") || "").trim();
+  const docType    = rawDocType || null;
 
-  if (!docType) {
-    return data({ error: "docType is required." }, { status: 400 });
-  }
 
   if (!file || typeof file === "string" || file.size === 0) {
     return data({ error: "No file uploaded." }, { status: 400 });
@@ -54,8 +57,14 @@ export async function action({ request }) {
   // ── Upload to S3 ──────────────────────────────────────────────────────────
   let s3Key;
   try {
-    const fileBuffer = await fileToBuffer(file);
-    const destinationKey = buildS3Key(user.agencyId, entityType, entityId, docType, file.name);
+    const fileBuffer     = await fileToBuffer(file);
+    const destinationKey = buildS3Key(
+      resolvedAgencyId || entityId,
+      entityType,
+      entityId,
+      docType || "none",
+      file.name
+    );
     s3Key = await uploadToS3(fileBuffer, destinationKey, file.type);
   } catch (err) {
     console.error("S3 upload failed:", err);
@@ -65,8 +74,7 @@ export async function action({ request }) {
   // ── Save Document record ──────────────────────────────────────────────────
   await connect();
 
-  const docTypeDoc = await DocumentType.findById(docType).lean();
-  const documentAgencyId = user.agencyId;
+  const docTypeDoc = docType ? await DocumentType.findById(docType).lean() : null;
 
   // Auto-calculate expiry from issueDate + expiryDays if available
   let finalExpiryDate = expiryDate || null;
@@ -77,10 +85,10 @@ export async function action({ request }) {
   }
 
   const doc = await Document.create({
-    agencyId:   documentAgencyId,
+    agencyId:   resolvedAgencyId || undefined,  // undefined → Mongoose skips the field (not required now)
     entityType,
     entityId,
-    docType,
+    docType:    docType || undefined,           // undefined → not stored when empty
     title,
     fileName:   file.name,
     s3Key,

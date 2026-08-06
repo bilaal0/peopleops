@@ -11,8 +11,9 @@ const documentSchema = new Schema(
     agencyId: {
       type: Schema.Types.ObjectId,
       ref: "Agency",
-      required: true,
+      required: false,
       index: true,
+      default: null,
     },
 
     // ── GENERIC ENTITY LINK ───────────────────────────────────────────────────
@@ -20,16 +21,17 @@ const documentSchema = new Schema(
     // This single pattern covers all modules without needing separate schemas.
     entityType: {
       type: String,
-      enum: ["landlord", "property", "tenant", "tenancy", "expense", "disbursement", "maintenance_job", "general"],
+      enum: ["landlord", "property", "tenant", "tenancy", "expense", "disbursement", "maintenance_job", "general", "staff", "client"],
       required: true,
       // expense:         receipt/invoice for an AgencyExpense record
       // disbursement:    attachment for a Disbursement record
       // maintenance_job: photo, quote, invoice for a MaintenanceJob
     },
     entityId: {
-      type: Schema.Types.ObjectId,
-      required: true,
+      type: Schema.Types.Mixed,   // accepts ObjectId OR plain string (e.g. User._id)
+      required: false,
       index: true,
+      default: null,
     },
 
     // ── SUB-RECORD LINK (for notices, etc) ────────────────────────────────────
@@ -126,5 +128,8 @@ documentSchema.index({
 });
 // used when fetching documents for a specific notice
 
-export const Document =
-  mongoose.models.Document || mongoose.model("Document", documentSchema);
+// Force re-compile so schema changes (enum, required flags) always take effect.
+// Safe in production because the process starts fresh; safe in dev because HMR
+// can otherwise keep a stale compiled model in memory.
+if (mongoose.models.Document) delete mongoose.models.Document;
+export const Document = mongoose.model("Document", documentSchema);

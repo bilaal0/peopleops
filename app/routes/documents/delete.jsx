@@ -18,10 +18,7 @@ export async function action({ request }) {
 
   await connect();
 
-  const query = { _id: documentId, deleted: false };
-  if (user.agencyId) query.agencyId = user.agencyId;
-
-  const doc = await Document.findOne(query);
+  const doc = await Document.findOne({ _id: documentId, deleted: false });
   if (!doc) {
     return data({ error: "Document not found." }, { status: 404 });
   }

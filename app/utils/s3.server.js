@@ -27,11 +27,9 @@ const BUCKET = process.env.STORAGE_BUCKET || "aiufs-bucket";
 
 // ── Allowed types ─────────────────────────────────────────────────────────────
 export const ALLOWED_MIME_TYPES = {
-  "application/pdf":                                                    ".pdf",
-  "image/jpeg":                                                         ".jpg",
-  "image/png":                                                          ".png",
-  "application/msword":                                                 ".doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+  "application/pdf": ".pdf",
+  "image/jpeg":      ".jpg",
+  "image/png":       ".png",
 };
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -119,7 +117,7 @@ export function validateFile(file) {
     return { valid: false, error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.` };
   }
   if (!ALLOWED_MIME_TYPES[file.type]) {
-    return { valid: false, error: `File type not allowed. Accepted: PDF, JPG, PNG, DOC, DOCX.` };
+    return { valid: false, error: `File type not allowed. Accepted: PDF, JPG, PNG.` };
   }
   return { valid: true };
 }

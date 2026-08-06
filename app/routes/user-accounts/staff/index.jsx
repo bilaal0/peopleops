@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link, useLoaderData, useNavigate, Form } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { User } from "../../../models/user.server.js";
@@ -49,7 +49,6 @@ const ROLE_BADGE = {
 
 export default function StaffIndexPage() {
   const { staffList } = useLoaderData();
-  const navigate = useNavigate();
 
   const columns = useMemo(
     () => [
@@ -60,17 +59,12 @@ export default function StaffIndexPage() {
           const s = row.original;
           const fullName = `${s.title ? s.title + " " : ""}${s.firstName} ${s.lastName}`.trim();
           return (
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0 border border-indigo-200">
-                {s.firstName.charAt(0).toUpperCase()}
-              </div>
-              <Link
-                to={`/user-accounts/staff/${s._id}`}
-                className="font-semibold text-gray-900 hover:text-indigo-600 transition"
-              >
-                {fullName || "Unnamed Staff"}
-              </Link>
-            </div>
+            <Link
+              to={`/user-accounts/staff/${s._id}`}
+              className="font-semibold text-gray-900 hover:text-indigo-600 transition"
+            >
+              {fullName || "Unnamed Staff"}
+            </Link>
           );
         },
       },
@@ -86,44 +80,19 @@ export default function StaffIndexPage() {
       },
       {
         id: "actions",
-        header: "Actions",
+        header: "",
         cell: ({ row }) => {
           const s = row.original;
           return (
-            <div className="flex items-center gap-2">
-              <Link
-                to={`/user-accounts/staff/${s._id}`}
-                className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-md transition"
-                title="View Details"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </Link>
-              <Link
-                to={`/user-accounts/staff/${s._id}/edit`}
-                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-md transition"
-                title="Edit"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </Link>
-              <Form method="post" action={`/user-accounts/staff/${s._id}/delete`} onSubmit={(e) => {
-                if (!confirm("Are you sure you want to delete this staff account?")) e.preventDefault();
-              }}>
-                <button
-                  type="submit"
-                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-md transition cursor-pointer"
-                  title="Delete"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </Form>
-            </div>
+            <Link
+              to={`/user-accounts/staff/${s._id}`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-slate-900 hover:to-slate-800 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </Link>
           );
         },
       },
