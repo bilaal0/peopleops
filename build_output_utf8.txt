@@ -1,0 +1,128 @@
+﻿
+> build
+> react-router build
+
+[36mvite v6.3.6 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 95 modules transformed.
+node.exe : [31mΓ£ù[39m Build failed in 7.31s
+At C:\Users\asim3\AppData\Roaming\npm\npm.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/npm/bin/npm-cli.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31mΓ£ù[39m Build failed in 7.31s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31m[commonjs--resolver] [31mServer-only module referenced by client[31m
+
+    '../config/db.server.js' imported by 'app/models/user.js'
+
+  See https://remix.run/docs/en/main/guides/vite#splitting-up-client-and-server-code
+[39m
+    at Object.resolveId (D:\Asim\Company\Cogentex\Clients\legalet\node_modules\@react-router\dev\dist\vite.js:3763:15)
+    at PluginDriver.hookFirstAndGetPlugin 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:22308:28)
+    at resolveId 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:20785:26)
+    at ModuleLoader.resolveId 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:21221:15)
+    at Object.resolveId 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/vite/dist/node/chunks/dep-Bu492Fnd.js:2835:10)
+    at PluginDriver.hookFirstAndGetPlugin 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:22308:28)
+    at resolveId 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:20785:26)
+    at ModuleLoader.resolveId 
+(file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:21221:15)
+    at file:///D:/Asim/Company/Cogentex/Clients/legalet/node_modules/rollup/dist/es/shared/node-entry.js:21525:50 {
+  code: 'PLUGIN_ERROR',
+  plugin: 'commonjs--resolver',
+  hook: 'resolveId',
+  watchFiles: [
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/@react-router/dev/dist/config/defaults/entry.client.tsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/root.tsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/home.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/login.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/signup.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/request-otp.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/verify-otp.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/verify-login.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/complete-signup.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/logout.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/auth/auth.invite.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/documents/download.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/documents/s3-download.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/documents/verify.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/documents/upload.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenancies/evidence-bundle.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/notes/add.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/notes/delete.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/api/maintenance/property-info.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/api/maintenance/run-cron.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/components/navigation/Layout.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/dashboard.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/properties/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/properties/add.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/properties/detail.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/properties/edit.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/landlords/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/landlords/add.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/landlords/detail.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/landlords/edit.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenants/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenants/add.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenants/detail.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenants/edit.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenants/delete.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenancies/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenancies/add.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenancies/edit.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/tenancies/detail.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/obligations/log.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/obligations/upload.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/compliance/dashboard.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/compliance/bundle.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/documents/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/agencies/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/agencies/add.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/agencies/edit.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/users/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/document-types/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/rent/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/rent/landlord/$landlordId.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/rent/statement/$id.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/rent/$tenancyId.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/transactions/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/transactions/import.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/disbursements/create.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/disbursements/$id.mark-paid.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/expenses/create.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/new.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/planned.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/contractors/index.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/contractors/new.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/contractors/$id.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/$id.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/routes/maintenance/$id.edit.jsx',
+    'D:\\Asim\\Company\\Cogentex\\Clients\\legalet\\package.json',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react/index.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react/jsx-runtime.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-dom/client.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-router/dist/development/dom-export.mjs',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-router/dist/development/index.mjs',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-router/dist/development/chunk-65XJMMLO.mjs',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-router/dist/development/chunk-NISHYRIK.mjs',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-dom/index.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react/cjs/react-jsx-runtime.production.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react/cjs/react.production.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-dom/cjs/react-dom-client.production.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/scheduler/index.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-router/node_modules/cookie/dist/index.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/set-cookie-parser/lib/set-cookie.js',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/react-router-dom/dist/index.mjs',
+    'D:/Asim/Company/Cogentex/Clients/legalet/node_modules/lucide-react/dist/esm/lucide-react.mjs',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/components/properties/PropertyForm.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/components/tenancy/TenancyForm.jsx',
+    'D:/Asim/Company/Cogentex/Clients/legalet/app/models/user.js'
+  ]
+}
