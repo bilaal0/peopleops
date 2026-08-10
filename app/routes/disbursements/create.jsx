@@ -2,7 +2,7 @@
 // POST action route to create a single landlord disbursement.
 //
 // Rules (from Section 10):
-// - Agency isolation: verified on landlord and query
+// - Organization isolation: verified on landlord and query
 // - Deductions applied correctly
 // - Net amount must be > 0 (no negative disbursements)
 // - Landlord bank details snapshot copied at creation time
@@ -23,7 +23,7 @@ export async function action({ request }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const formData = await request.formData();
 
   const landlordId = formData.get("landlordId");
@@ -59,7 +59,7 @@ export async function action({ request }) {
   }
 
   // Fetch Landlord and get current bank details snapshot
-  const landlord = await User.findOne({ _id: landlordId, agencyId });
+  const landlord = await User.findOne({ _id: landlordId, organizationId });
   if (!landlord) {
     return { success: false, error: "Landlord not found." };
   }
@@ -67,7 +67,7 @@ export async function action({ request }) {
   // Calculate calculations
   const preview = await calculateDisbursement(
     landlordId,
-    agencyId,
+    organizationId,
     periodStartStr,
     periodEndStr,
     manualDeductions
@@ -83,7 +83,7 @@ export async function action({ request }) {
 
   // Check for duplicates
   const duplicate = await Disbursement.findOne({
-    agencyId,
+    organizationId,
     landlordId,
     periodStart: new Date(periodStartStr),
     periodEnd: new Date(periodEndStr),
@@ -97,7 +97,7 @@ export async function action({ request }) {
 
   // Create Disbursement
   const disbursement = await Disbursement.create({
-    agencyId,
+    organizationId,
     landlordId,
     propertyIds: preview.propertyIds,
     rentPaymentIds: preview.rentPaymentIds,

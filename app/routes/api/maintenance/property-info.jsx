@@ -17,7 +17,7 @@ const jsonResponse = (data, status = 200) =>
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return jsonResponse({ error: "Unauthorized" }, 401);
-  if (!user.agencyId) return jsonResponse({ error: "Agency scoping required" }, 403);
+  if (!user.organizationId) return jsonResponse({ error: "Organization scoping required" }, 403);
 
   const url = new URL(request.url);
   const propertyId = url.searchParams.get("propertyId")?.trim();
@@ -32,7 +32,7 @@ export async function loader({ request }) {
     // Scoped property query
     const property = await Property.findOne({
       _id: propertyId,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: { $ne: true },
     }).lean();
 
@@ -43,14 +43,14 @@ export async function loader({ request }) {
     // Get landlord details
     const landlord = await User.findOne({
       _id: property.landlordId,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: { $ne: true },
     }).select("title firstName lastName").lean();
 
     // Get active tenancy
     const activeTenancy = await Tenancy.findOne({
       propertyId: property._id,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       status: "active",
     })
       .populate("tenantIds", "title firstName lastName")

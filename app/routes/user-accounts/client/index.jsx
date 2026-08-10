@@ -17,8 +17,8 @@ export async function loader({ request }) {
     deleted: false,
   };
 
-  if (!user.roles?.includes("SUPER_ADMIN") && user.agencyId) {
-    query.agencyId = user.agencyId;
+  if (!user.roles?.includes("SUPER_ADMIN") && user.organizationId) {
+    query.organizationId = user.organizationId;
   }
 
   const clientUsers = await User.find(query).sort({ createdAt: -1 }).lean();

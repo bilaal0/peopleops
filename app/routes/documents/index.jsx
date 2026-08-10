@@ -18,21 +18,21 @@ export async function loader({ request }) {
 
   await connect();
 
-  const agencyQuery = user.agencyId ? { agencyId: user.agencyId } : {};
+  const organizationQuery = user.organizationId ? { organizationId: user.organizationId } : {};
   const staffRoles  = ["EMPLOYEE", "REGISTERED_MANAGER", "ADMIN", "INITIAL_ADMIN", "MASTER_ADMIN", "SUPER_ADMIN"];
 
   const [docs, staffList, clientList] = await Promise.all([
-    Document.find({ ...agencyQuery, deleted: false })
+    Document.find({ ...organizationQuery, deleted: false })
       .populate("docType", "name")
       .sort({ createdAt: -1 })
       .lean()
       .catch(() => []),
-    User.find({ ...agencyQuery, deleted: false, roles: { $in: staffRoles } })
+    User.find({ ...organizationQuery, deleted: false, roles: { $in: staffRoles } })
       .select("_id firstName lastName jobTitle")
       .sort({ firstName: 1 })
       .lean()
       .catch(() => []),
-    User.find({ ...agencyQuery, deleted: false, roles: "CLIENT" })
+    User.find({ ...organizationQuery, deleted: false, roles: "CLIENT" })
       .select("_id firstName lastName positionInCompany")
       .sort({ firstName: 1 })
       .lean()
@@ -51,7 +51,7 @@ export async function loader({ request }) {
       notes:      d.notes || null,
       createdAt:  d.createdAt,
     })),
-    agencyId: user.agencyId?.toString() || null,
+    organizationId: user.organizationId?.toString() || null,
     people: [
       ...staffList.map((u) => ({
         _id:        u._id.toString(),
@@ -178,7 +178,7 @@ function DocumentCard({ doc }) {
 }
 
 // ── Upload Modal ──────────────────────────────────────────────────────────────
-function UploadModal({ people, agencyId, onClose }) {
+function UploadModal({ people, organizationId, onClose }) {
   const fetcher  = useFetcher();
   const fileRef  = useRef(null);
   const [fileName, setFileName]           = useState("");
@@ -218,7 +218,7 @@ function UploadModal({ people, agencyId, onClose }) {
         >
           <input type="hidden" name="entityType" value={entityType} />
           <input type="hidden" name="entityId"   value={selectedPersonId} />
-          <input type="hidden" name="agencyId"   value={agencyId || ""} />
+          <input type="hidden" name="organizationId"   value={organizationId || ""} />
 
           {/* Person */}
           <div>
@@ -348,7 +348,7 @@ function UploadModal({ people, agencyId, onClose }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DocumentsIndex() {
-  const { documents = [], people = [], agencyId } = useLoaderData();
+  const { documents = [], people = [], organizationId } = useLoaderData();
   const [search, setSearch]       = useState("");
   const [showUpload, setShowUpload] = useState(false);
 
@@ -449,7 +449,7 @@ export default function DocumentsIndex() {
       {showUpload && (
         <UploadModal
           people={people}
-          agencyId={agencyId}
+          organizationId={organizationId}
           onClose={() => setShowUpload(false)}
         />
       )}

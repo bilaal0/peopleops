@@ -46,24 +46,24 @@ export async function getUserFromRequest(reqOrRequest) {
   const session = await getSession(getCookieHeader(reqOrRequest));
   const userId = session.get("userId");
   const roles = session.get("roles") || [];
-  let agencyId = session.get("agencyId") || null;
+  let organizationId = session.get("organizationId") || null;
 
   if (!userId) return null;
 
-  // If agencyId is missing from the session (e.g. existing account pre-dating
-  // the Agency flow), look it up from the DB and return it.
+  // If organizationId is missing from the session (e.g. existing account pre-dating
+  // the Organization flow), look it up from the DB and return it.
   // The session cookie itself is NOT rewritten here — that happens on next login.
-  if (!agencyId) {
+  if (!organizationId) {
     try {
       await connect();
-      const user = await User.findById(userId).select("agencyId").lean();
-      if (user?.agencyId) agencyId = String(user.agencyId);
+      const user = await User.findById(userId).select("organizationId").lean();
+      if (user?.organizationId) organizationId = String(user.organizationId);
     } catch {
-      // Non-fatal — proceed without agencyId
+      // Non-fatal — proceed without organizationId
     }
   }
 
-  return { userId: String(userId), roles, agencyId };
+  return { userId: String(userId), roles, organizationId };
 }
 
 
@@ -116,11 +116,11 @@ export async function requireUserRole(reqOrRequest, role, redirectTo = "/login")
    Create / Destroy session
    ========================= */
 
-export async function createUserSessionHeaders({ userId, roles = [], agencyId = null, remember = true }) {
+export async function createUserSessionHeaders({ userId, roles = [], organizationId = null, remember = true }) {
   const session = await getSession();
   session.set("userId", String(userId));
   session.set("roles", roles);
-  if (agencyId) session.set("agencyId", String(agencyId));
+  if (organizationId) session.set("organizationId", String(organizationId));
 
   const cookie = await commitSession(session, {
     maxAge: remember ? 60 * 60 * 24 * 30 : undefined,
@@ -132,11 +132,11 @@ export async function createUserSessionHeaders({ userId, roles = [], agencyId = 
 export async function createUserSessionRedirect({
   userId,
   roles = [],
-  agencyId = null,
+  organizationId = null,
   remember = true,
   redirectTo = "/dashboard",
 }) {
-  const headers = await createUserSessionHeaders({ userId, roles, agencyId, remember });
+  const headers = await createUserSessionHeaders({ userId, roles, organizationId, remember });
   return redirect(redirectTo, { headers });
 }
 
@@ -194,13 +194,13 @@ export async function login({ email, password }) {
 
   delete user.password;
 
-  // Load agencyId from user record
-  const agencyId = user.agencyId ? String(user.agencyId) : null;
+  // Load organizationId from user record
+  const organizationId = user.organizationId ? String(user.organizationId) : null;
 
   return {
     status: 200,
     message: "Login success",
-    user: { ...user, fullName, initials, org, agencyId },
+    user: { ...user, fullName, initials, org, organizationId },
   };
 }
 
@@ -221,7 +221,7 @@ export async function loginAndCreateSessionRedirect({
   return await createUserSessionRedirect({
     userId: String(user._id),
     roles: user.roles || [],
-    agencyId: user.agencyId || null,
+    organizationId: user.organizationId || null,
     remember,
     redirectTo,
   });

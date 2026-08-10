@@ -18,20 +18,20 @@ import { logDocumentUploaded } from "../../utils/activityLog.server.js";
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return data({ error: "Unauthorised" }, { status: 401 });
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) {
-    return data({ error: "No agency access" }, { status: 403 });
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) {
+    return data({ error: "No organization access" }, { status: 403 });
   }
 
   const formData   = await request.formData();
   const entityType = formData.get("entityType") || "general";
 
-  // entityId: form value → agencyId → userId → "general" (last resort string)
+  // entityId: form value → organizationId → userId → "general" (last resort string)
   const rawEntityId = (formData.get("entityId") || "").trim();
-  const entityId    = rawEntityId || user.agencyId?.toString() || user.userId || "general";
+  const entityId    = rawEntityId || user.organizationId?.toString() || user.userId || "general";
 
-  // agencyId for the Document record
-  const rawAgencyId      = (formData.get("agencyId") || "").trim();
-  const resolvedAgencyId = rawAgencyId || user.agencyId?.toString() || null;
+  // organizationId for the Document record
+  const rawOrganizationId      = (formData.get("organizationId") || "").trim();
+  const resolvedOrganizationId = rawOrganizationId || user.organizationId?.toString() || null;
 
   const expiryDate = formData.get("expiryDate") || null;
   const issueDate  = formData.get("issueDate")  || null;
@@ -59,7 +59,7 @@ export async function action({ request }) {
   try {
     const fileBuffer     = await fileToBuffer(file);
     const destinationKey = buildS3Key(
-      resolvedAgencyId || entityId,
+      resolvedOrganizationId || entityId,
       entityType,
       entityId,
       docType || "none",
@@ -85,7 +85,7 @@ export async function action({ request }) {
   }
 
   const doc = await Document.create({
-    agencyId:   resolvedAgencyId || undefined,  // undefined → Mongoose skips the field (not required now)
+    organizationId:   resolvedOrganizationId || undefined,  // undefined → Mongoose skips the field (not required now)
     entityType,
     entityId,
     docType:    docType || undefined,           // undefined → not stored when empty

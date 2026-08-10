@@ -148,18 +148,18 @@ export function runPropertyPreFlight(property) {
 //
 // Usage in action:
 //   const { canCreate, blocks, warnings } = await runTenancyPreFlight(
-//     propertyId, landlordId, tenantIds, agencyId
+//     propertyId, landlordId, tenantIds, organizationId
 //   );
 //   if (!canCreate) return data({ errors: { preflight: blocks } }, { status: 400 });
 
-export async function runTenancyPreFlight(propertyId, landlordId, tenantIds, agencyId) {
+export async function runTenancyPreFlight(propertyId, landlordId, tenantIds, organizationId) {
   const blocks   = [];
   const warnings = [];
 
   // ── 1. Fetch landlord ──────────────────────────────────────────────────────
   const landlord = await User.findOne({
     _id: landlordId,
-    agencyId,
+    organizationId,
     roles: "LANDLORD",
   }).lean();
 
@@ -186,7 +186,7 @@ export async function runTenancyPreFlight(propertyId, landlordId, tenantIds, age
   // ── 2. Fetch property ──────────────────────────────────────────────────────
   const property = await Property.findOne({
     _id: propertyId,
-    agencyId,
+    organizationId,
     deleted: false,
   }).lean();
 
@@ -211,7 +211,7 @@ export async function runTenancyPreFlight(propertyId, landlordId, tenantIds, age
   for (const tenantId of tenantIds) {
     const tenant = await User.findOne({
       _id: tenantId,
-      agencyId,
+      organizationId,
       roles: "TENANT",
     }).lean();
 

@@ -13,16 +13,16 @@ import PropertyForm from "../../components/properties/PropertyForm.jsx";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId };
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId };
 
-  const property = await Property.findOne({ _id: params.id, deleted: false, ...agencyFilter }).lean();
+  const property = await Property.findOne({ _id: params.id, deleted: false, ...organizationFilter }).lean();
   if (!property) return redirect("/properties");
 
   // Fetch landlords with AML status for dropdown
-  const users = await User.find({ ...agencyFilter, roles: "LANDLORD", deleted: false })
+  const users = await User.find({ ...organizationFilter, roles: "LANDLORD", deleted: false })
     .select("title firstName lastName landlordData.amlResult")
     .sort({ createdAt: -1 })
     .lean();
@@ -39,7 +39,7 @@ export async function loader({ request, params }) {
   const serialized = {
     ...property,
     _id: property._id.toString(),
-    agencyId: property.agencyId?.toString(),
+    organizationId: property.organizationId?.toString(),
     landlordId: property.landlordId?.toString(),
     createdBy: property.createdBy?.toString(),
     updatedBy: property.updatedBy?.toString(),
@@ -51,7 +51,7 @@ export async function loader({ request, params }) {
 export async function action({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   const formData = await request.formData();
   const v = Object.fromEntries(formData);
@@ -90,22 +90,22 @@ export async function action({ request, params }) {
 
   try {
     await connect();
-    const agencyFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId };
+    const organizationFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId };
 
-    const property = await Property.findOne({ _id: params.id, deleted: false, ...agencyFilter });
+    const property = await Property.findOne({ _id: params.id, deleted: false, ...organizationFilter });
     if (!property) {
       return data({ errors: { general: "Property not found or access denied." } }, { status: 404 });
     }
 
-    // ── Verify landlord belongs to this agency ────────────────────────────
+    // ── Verify landlord belongs to this organization ────────────────────────────
     const landlordUser = await User.findOne({
       _id: v.landlordId,
-      ...agencyFilter,
+      ...organizationFilter,
       roles: "LANDLORD",
     }).lean();
 
     if (!landlordUser) {
-      return data({ errors: { landlordId: "Landlord not found or does not belong to your agency." }, values: v }, { status: 400 });
+      return data({ errors: { landlordId: "Landlord not found or does not belong to your organization." }, values: v }, { status: 400 });
     }
 
     // ── Block status change away from "let" if active tenancies exist ─────
@@ -169,7 +169,7 @@ export async function action({ request, params }) {
         return data({ errors: { mainImage: "Main image exceeds 5MB limit." }, values: v }, { status: 400 });
       }
       const buffer = await fileToBuffer(mainImageFile);
-      const s3Key = buildS3Key(user.agencyId, "property", property._id.toString(), "main_image", mainImageFile.name);
+      const s3Key = buildS3Key(user.organizationId, "property", property._id.toString(), "main_image", mainImageFile.name);
       mainImageKey = await uploadToS3(buffer, s3Key, mainImageFile.type);
       hasUploads = true;
     }
@@ -185,7 +185,7 @@ export async function action({ request, params }) {
         return data({ errors: { additionalImages: `File ${file.name} exceeds 5MB limit.` }, values: v }, { status: 400 });
       }
       const buffer = await fileToBuffer(file);
-      const s3Key = buildS3Key(user.agencyId, "property", property._id.toString(), "gallery", file.name);
+      const s3Key = buildS3Key(user.organizationId, "property", property._id.toString(), "gallery", file.name);
       galleryKeys.push(await uploadToS3(buffer, s3Key, file.type));
       hasUploads = true;
     }

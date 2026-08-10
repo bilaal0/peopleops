@@ -7,7 +7,7 @@ export async function action({ request }) {
   const { connect } = await import("../../config/db.server.js");
   const { User } = await import("../../models/user.server.js");
   const { PendingSignup } = await import("../../models/pendingSignup.server.js");
-  const { Agency } = await import("../../models/agency.server.js");
+  const { Organization } = await import("../../models/organization.server.js");
   const { createUserSessionRedirect } = await import("../../utils/auth.server.js");
 
   await connect();
@@ -17,7 +17,7 @@ export async function action({ request }) {
   const title = String(formData.get("title") || "").trim();
   const firstName = String(formData.get("firstName") || "").trim() || "Admin";
   const lastName = String(formData.get("lastName") || "").trim() || "User";
-  const agencyName = String(formData.get("agencyName") || "").trim() || (email ? `${email.split("@")[0]} Organization` : "Organization");
+  const organizationName = String(formData.get("organizationName") || "").trim() || (email ? `${email.split("@")[0]} Organization` : "Organization");
   const phone = String(formData.get("phone") || "").trim();
   const password = String(formData.get("password") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
@@ -45,9 +45,9 @@ export async function action({ request }) {
       return { error: "An account with this email already exists. Please sign in." };
     }
 
-    // Create Agency (30-day trial)
-    const agency = await Agency.create({
-      name: agencyName,
+    // Create Organization (30-day trial)
+    const organization = await Organization.create({
+      name: organizationName,
       plan: "trial",
       status: "trialing",
       propertyLimit: 30,
@@ -55,7 +55,7 @@ export async function action({ request }) {
       phone: phone || undefined,
     });
 
-    // Create admin user linked to agency
+    // Create admin user linked to organization
     const user = await User.create({
       email,
       title: title || undefined,
@@ -64,7 +64,7 @@ export async function action({ request }) {
       password, // Hashed by pre-save hook
       emailVerified: true,
       roles: ["ADMIN"],
-      agencyId: agency._id,
+      organizationId: organization._id,
       selfManaging: false,
       status: 1,
     });
@@ -74,7 +74,7 @@ export async function action({ request }) {
     return await createUserSessionRedirect({
       userId: String(user._id),
       roles: user.roles || [],
-      agencyId: String(agency._id),
+      organizationId: String(organization._id),
       remember: true,
       redirectTo: "/dashboard",
     });

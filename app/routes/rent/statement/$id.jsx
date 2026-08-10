@@ -5,7 +5,7 @@
 // Supports print-friendly layout.
 //
 // Rules:
-// - Agency isolation checked
+// - Organization isolation checked
 // - Soft delete checked
 // - 2dp rounding checked
 
@@ -16,7 +16,7 @@ import { connect } from "../../../config/db.server.js";
 import { Disbursement } from "../../../models/disbursement.server.js";
 import { User } from "../../../models/user.server.js";
 import { RentPayment } from "../../../models/rentPayment.server.js";
-import { Agency } from "../../../models/agency.server.js";
+import { Organization } from "../../../models/organization.server.js";
 import {
   ArrowLeft,
   Printer,
@@ -35,14 +35,14 @@ export async function loader({ request, params }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const { id } = params;
 
   // Explicitly reference User so compiler knows it belongs to server
   User;
 
   // 1. Fetch Disbursement
-  const disbursement = await Disbursement.findOne({ _id: id, agencyId, deleted: false })
+  const disbursement = await Disbursement.findOne({ _id: id, organizationId, deleted: false })
     .populate("landlordId")
     .lean();
 
@@ -50,13 +50,13 @@ export async function loader({ request, params }) {
     return redirect("/rent");
   }
 
-  // 2. Fetch Agency info
-  const agency = await Agency.findById(agencyId).lean();
+  // 2. Fetch Organization info
+  const organization = await Organization.findById(organizationId).lean();
 
   // 3. Fetch detailed RentPayments included in this disbursement
   const payments = await RentPayment.find({
     _id: { $in: disbursement.rentPaymentIds },
-    agencyId,
+    organizationId,
     deleted: false
   })
     .populate("propertyId")
@@ -73,9 +73,9 @@ export async function loader({ request, params }) {
       rentPaymentIds: disbursement.rentPaymentIds.map(id => id.toString()),
       propertyIds: disbursement.propertyIds.map(id => id.toString())
     },
-    agency: agency ? {
-      ...agency,
-      _id: agency._id.toString()
+    organization: organization ? {
+      ...organization,
+      _id: organization._id.toString()
     } : null,
     payments: payments.map(p => ({
       ...p,
@@ -89,7 +89,7 @@ export async function loader({ request, params }) {
 }
 
 export default function LandlordStatement() {
-  const { disbursement, agency, payments } = useLoaderData();
+  const { disbursement, organization, payments } = useLoaderData();
 
   const formatCurrency = (amt) => {
     return (amt || 0).toLocaleString("en-GB", {
@@ -135,7 +135,7 @@ export default function LandlordStatement() {
                 <Building className="w-5 h-5" />
               </span>
               <span className="font-extrabold text-lg text-slate-900 tracking-tight">
-                {agency?.name || "PROPLET AGENCY"}
+                {organization?.name || "PROPLET ORGANIZATION"}
               </span>
             </div>
             <p className="text-[10px] text-[#94A3B8] font-bold uppercase mt-1 tracking-wider">
@@ -157,13 +157,13 @@ export default function LandlordStatement() {
         {/* Sender & Recipient addresses */}
         <div className="grid grid-cols-2 gap-8 border-t border-b border-[#E2E8F0] py-6">
           <div className="space-y-2">
-            <h3 className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Agency Details</h3>
-            <p className="text-xs font-bold text-slate-900">{agency?.name || "Proplet Lettings"}</p>
+            <h3 className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Organization Details</h3>
+            <p className="text-xs font-bold text-slate-900">{organization?.name || "Proplet Lettings"}</p>
             <div className="text-xs text-[#475569] space-y-1">
-              {agency?.addressLine1 && <p>{agency.addressLine1}</p>}
-              {agency?.addressLine2 && <p>{agency.addressLine2}</p>}
-              {agency?.city && <p>{agency.city}</p>}
-              {agency?.postcode && <p className="font-semibold uppercase">{agency.postcode}</p>}
+              {organization?.addressLine1 && <p>{organization.addressLine1}</p>}
+              {organization?.addressLine2 && <p>{organization.addressLine2}</p>}
+              {organization?.city && <p>{organization.city}</p>}
+              {organization?.postcode && <p className="font-semibold uppercase">{organization.postcode}</p>}
             </div>
           </div>
 
@@ -273,7 +273,7 @@ export default function LandlordStatement() {
               <span className="font-semibold text-slate-900">{formatCurrency(disbursement.grossRent)}</span>
             </div>
             <div className="flex justify-between text-[#475569]">
-              <span>Agency Commission:</span>
+              <span>Organization Commission:</span>
               <span className="font-semibold text-red-600">-{formatCurrency(disbursement.totalCommission)}</span>
             </div>
             {disbursement.totalVat > 0 && (
@@ -319,7 +319,7 @@ export default function LandlordStatement() {
 
         {/* Footer Note */}
         <div className="text-center text-[10px] text-[#94A3B8] border-t border-[#E2E8F0] pt-6 mt-12">
-          Thank you for choosing {agency?.name || "PROPLET AGENCY"}. If you have any questions regarding this statement, please contact us.
+          Thank you for choosing {organization?.name || "PROPLET ORGANIZATION"}. If you have any questions regarding this statement, please contact us.
         </div>
       </div>
     </div>

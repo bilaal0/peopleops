@@ -1,7 +1,7 @@
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";
 import { Note, NOTE_ENTITY_TYPES } from "../../models/note.server.js";
-import { verifyEntityAgency, getNotesForEntity } from "../../utils/notes.server.js";
+import { verifyEntityOrganization, getNotesForEntity } from "../../utils/notes.server.js";
 
 const jsonResponse = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -25,7 +25,7 @@ export async function loader({ request }) {
 
   try {
     await connect();
-    const result = await getNotesForEntity(entityType, entityId, user.agencyId, page);
+    const result = await getNotesForEntity(entityType, entityId, user.organizationId, page);
     return jsonResponse(result);
   } catch (err) {
     console.error("Error loading notes:", err);
@@ -57,13 +57,13 @@ export async function action({ request }) {
 
   try {
     await connect();
-    const isAuthorized = await verifyEntityAgency(entityType, entityId, user.agencyId);
+    const isAuthorized = await verifyEntityOrganization(entityType, entityId, user.organizationId);
     if (!isAuthorized) {
       return jsonResponse({ error: "Entity not found or access denied" }, 404);
     }
 
     let note = await Note.create({
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       entityType,
       entityId,
       text,
@@ -85,7 +85,7 @@ export async function action({ request }) {
         email: note.addedBy.email,
         _id: note.addedBy._id.toString()
       } : null,
-      agencyId: note.agencyId.toString(),
+      organizationId: note.organizationId.toString(),
       entityId: note.entityId.toString(),
       eventType: note.eventType || null,
       isSystem: Boolean(note.isSystem),

@@ -75,7 +75,7 @@ export async function action({ request }) {
       city: postTown,
       postcode,
       status,
-      agencyId: currentUser.agencyId || null,
+      organizationId: currentUser.organizationId || null,
       addedBy: currentUser._id,
       landlordData: {
         isCompany,

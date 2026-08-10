@@ -17,15 +17,15 @@ import Timeline from "../../components/timeline/Timeline.jsx";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
 
   const isSuperAdmin = user.roles?.includes("SUPER_ADMIN");
-  const agencyFilter = isSuperAdmin ? {} : { agencyId: user.agencyId };
+  const organizationFilter = isSuperAdmin ? {} : { organizationId: user.organizationId };
 
   // Load tenant from User collection
-  const profile = await User.findOne({ _id: params.id, roles: "TENANT", ...agencyFilter })
+  const profile = await User.findOne({ _id: params.id, roles: "TENANT", ...organizationFilter })
     .populate("tenantData.rightToRentCheckedBy", "title firstName lastName")
     .lean();
 
@@ -35,11 +35,11 @@ export async function loader({ request, params }) {
   const fullUser = await User.findById(user.userId).lean();
 
   const [tenancies, documents, activeDocTypes, notesResult] = await Promise.all([
-    Tenancy.find({ tenantIds: tenantUserId, deleted: false, ...agencyFilter })
+    Tenancy.find({ tenantIds: tenantUserId, deleted: false, ...organizationFilter })
       .populate("propertyId", "addressLine1 addressLine2 city postcode bgImage")
       .sort({ createdAt: -1 })
       .lean(),
-    Document.find({ entityId: tenantUserId, entityType: "tenant", deleted: false, ...agencyFilter })
+    Document.find({ entityId: tenantUserId, entityType: "tenant", deleted: false, ...organizationFilter })
       .populate("docType", "name")
       .populate("uploadedBy", "title firstName lastName")
       .sort({ createdAt: -1 })
@@ -47,10 +47,10 @@ export async function loader({ request, params }) {
     DocumentType.find({ isActive: true, entity: "tenant" })
       .sort({ name: 1 })
       .lean(),
-    getNotesForEntity("tenant", params.id, user.agencyId, 1)
+    getNotesForEntity("tenant", params.id, user.organizationId, 1)
   ]);
 
-  const isAdmin = !!user.agencyId || user.roles?.includes("SUPER_ADMIN");
+  const isAdmin = !!user.organizationId || user.roles?.includes("SUPER_ADMIN");
   const isSuper = user.roles?.includes("SUPER_ADMIN");
 
   // Format Right to Rent status
@@ -69,7 +69,7 @@ export async function loader({ request, params }) {
     ...d,
     _id:        d._id.toString(),
     entityId:   d.entityId?.toString() || null,
-    agencyId:   d.agencyId?.toString() || null,
+    organizationId:   d.organizationId?.toString() || null,
     docType:    d.docType ? { ...d.docType, _id: d.docType._id.toString() } : null,
     uploadedBy: d.uploadedBy
       ? { ...d.uploadedBy, _id: d.uploadedBy._id.toString() }

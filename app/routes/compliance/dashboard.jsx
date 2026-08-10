@@ -3,7 +3,7 @@
 import { useLoaderData, Link } from "react-router-dom";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
-import { getAgencyDashboardData } from "../../utils/dashboard.server.js";
+import { getOrganizationDashboardData } from "../../utils/dashboard.server.js";
 import { connect } from "../../config/db.server.js";
 import { 
   AlertCircle, 
@@ -18,10 +18,10 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const dashboardData = await getAgencyDashboardData(user.agencyId);
+  const dashboardData = await getOrganizationDashboardData(user.organizationId);
   return { dashboardData };
 }
 

@@ -1,6 +1,6 @@
 // utils/dashboard.server.js
-// Fetch and format all data for the Agency Dashboard.
-// Enforces agency isolation, uses parallel execution, and uses lean queries.
+// Fetch and format all data for the Organization Dashboard.
+// Enforces organization isolation, uses parallel execution, and uses lean queries.
 
 import { connect } from "../config/db.server.js";
 import { Property } from "../models/property.server.js";
@@ -12,7 +12,7 @@ import { User } from "../models/user.server.js";
 import { Note } from "../models/note.server.js";
 import { MaintenanceJob } from "../models/MaintenanceJob.server.js";
 
-export async function getAgencyDashboardData(agencyId) {
+export async function getOrganizationDashboardData(organizationId) {
   await connect();
 
   const today = new Date();
@@ -45,19 +45,19 @@ export async function getAgencyDashboardData(agencyId) {
     activeJobs,
     ] = await Promise.all([
     // All non-deleted properties for status grouping
-    Property.find({ agencyId, deleted: false })
+    Property.find({ organizationId, deleted: false })
       .select("status addressLine1 epcRating epcExpiryDate")
       .lean(),
     
     // Active tenancies for building scopes (tenants, properties)
-    Tenancy.find({ agencyId, status: "active", deleted: false })
+    Tenancy.find({ organizationId, status: "active", deleted: false })
       .select("startDate endDate tenancyType deposit howToRent tenantIds propertyId landlordId")
       .populate("tenantIds", "title firstName lastName tenantData.rightToRentExpiry")
       .populate("propertyId", "addressLine1 epcRating epcExpiryDate")
       .lean(),
 
     // Recent activities (system events only)
-    Note.find({ agencyId, isSystem: true, deleted: false })
+    Note.find({ organizationId, isSystem: true, deleted: false })
       .select("text eventType entityType createdAt addedBy")
       .populate("addedBy", "title firstName lastName email")
       .sort({ createdAt: -1 })
@@ -65,7 +65,7 @@ export async function getAgencyDashboardData(agencyId) {
       .lean(),
 
     // Recent uploaded documents
-    Document.find({ agencyId, deleted: false })
+    Document.find({ organizationId, deleted: false })
       .populate("uploadedBy", "title firstName lastName")
       .populate("docType", "name key")
       .sort({ createdAt: -1 })
@@ -74,14 +74,14 @@ export async function getAgencyDashboardData(agencyId) {
 
     // Rent due/paid in the current month
     RentPayment.find({
-      agencyId,
+      organizationId,
       dueDate: { $gte: startOfMonth, $lte: endOfMonth },
       deleted: false
     }).lean(),
 
     // Unresolved payments for arrears and warning flags
     RentPayment.find({
-      agencyId,
+      organizationId,
       status: { $in: ["overdue", "partial", "due"] },
       deleted: false
     })
@@ -90,7 +90,7 @@ export async function getAgencyDashboardData(agencyId) {
 
     // Active maintenance jobs
     MaintenanceJob.find({
-      agencyId,
+      organizationId,
       deleted: { $ne: true },
       status: { $nin: ["closed", "cancelled"] }
     })
@@ -156,7 +156,7 @@ export async function getAgencyDashboardData(agencyId) {
   const allPropertyIds = properties.map(p => p._id.toString());
   const propertyCertDocs = allPropertyIds.length
     ? await Document.find({
-        agencyId,
+        organizationId,
         entityType: "property",
         entityId: { $in: allPropertyIds },
         docType: { $in: certTypeIds },

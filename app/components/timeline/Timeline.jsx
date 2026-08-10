@@ -256,7 +256,7 @@ function TimelineEntry({
   const initials = note.isSystem ? null : getInitials(authorName);
   const canDelete = !note.isSystem && (
     String(currentUserId) === String(note.addedBy?._id) ||
-    ["agency_admin", "AGENCY_ADMIN", "SUPER_ADMIN"].includes(currentUserRole)
+    ["organization_admin", "ORGANIZATION_ADMIN", "SUPER_ADMIN"].includes(currentUserRole)
   );
 
   useEffect(() => {

@@ -24,14 +24,14 @@ function parseDate(val) {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
   return {};
 }
 
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   const formData = await request.formData();
   const v = Object.fromEntries(formData);
@@ -105,7 +105,7 @@ export async function action({ request }) {
       addressLine3: v.addressLine3?.trim() || undefined,
       postTown: v.postTown?.trim() || undefined,
       postcode: v.postcode?.trim().toUpperCase() || undefined,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       roles: ["TENANT"],
       status: 1, // Active
       addedBy: user.userId,
@@ -162,7 +162,7 @@ export async function action({ request }) {
 
     // ── Step 2: Handle S3 Upload if file present ───────────────────────────
     if (file && file.size > 0) {
-      const s3Key = buildS3Key(user.agencyId, "tenant", tenantUser._id.toString(), "right_to_rent", file.name);
+      const s3Key = buildS3Key(user.organizationId, "tenant", tenantUser._id.toString(), "right_to_rent", file.name);
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       await uploadToS3(buffer, s3Key, file.type);
@@ -170,7 +170,7 @@ export async function action({ request }) {
       const docTypeDoc = await DocumentType.findOne({ key: "right_to_rent" }).lean();
       if (docTypeDoc) {
         const document = await Document.create({
-          agencyId: user.agencyId,
+          organizationId: user.organizationId,
           entityType: "tenant",
           entityId: tenantUser._id,
           docType: docTypeDoc._id,

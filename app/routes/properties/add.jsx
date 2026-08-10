@@ -14,17 +14,17 @@ import { logPropertyAdded } from "../../utils/activityLog.server.js";
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId };
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId };
 
   // Pre-select landlord from query param (?landlordId=xxx)
   const url = new URL(request.url);
   const preselectedLandlordId = url.searchParams.get("landlordId") || null;
 
   // Fetch landlords with AML status
-  const users = await User.find({ ...agencyFilter, roles: "LANDLORD", deleted: false })
+  const users = await User.find({ ...organizationFilter, roles: "LANDLORD", deleted: false })
     .select("title firstName lastName landlordData.amlResult")
     .sort({ createdAt: -1 })
     .lean();
@@ -43,7 +43,7 @@ export async function loader({ request }) {
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   const formData = await request.formData();
   const v = Object.fromEntries(formData);
@@ -78,15 +78,15 @@ export async function action({ request }) {
   try {
     await connect();
 
-    // ── Verify landlord belongs to this agency ────────────────────────────
+    // ── Verify landlord belongs to this organization ────────────────────────────
     const landlordUser = await User.findOne({
       _id: v.landlordId,
-      ...(user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId }),
+      ...(user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId }),
       roles: "LANDLORD",
     }).lean();
 
     if (!landlordUser) {
-      return data({ errors: { landlordId: "Landlord not found or does not belong to your agency." }, values: v }, { status: 400 });
+      return data({ errors: { landlordId: "Landlord not found or does not belong to your organization." }, values: v }, { status: 400 });
     }
 
     // ── Check landlord AML (warn only, don't block) ──────────────────────
@@ -106,7 +106,7 @@ export async function action({ request }) {
 
     // ── Create property ───────────────────────────────────────────────────
     const property = await Property.create({
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       landlordId: v.landlordId,
       addressLine1: v.addressLine1.trim(),
       addressLine2: v.addressLine2?.trim() || undefined,
@@ -143,7 +143,7 @@ export async function action({ request }) {
 
     if (v.notes?.trim()) {
       await Note.create({
-        agencyId: user.agencyId,
+        organizationId: user.organizationId,
         entityType: 'property',
         entityId: property._id,
         text: v.notes.trim(),
@@ -164,7 +164,7 @@ export async function action({ request }) {
         return data({ errors: { mainImage: "Main image exceeds 5MB limit." }, values: v }, { status: 400 });
       }
       const buffer = await fileToBuffer(mainImageFile);
-      const s3Key = buildS3Key(user.agencyId, "property", property._id.toString(), "main_image", mainImageFile.name);
+      const s3Key = buildS3Key(user.organizationId, "property", property._id.toString(), "main_image", mainImageFile.name);
       mainImageKey = await uploadToS3(buffer, s3Key, mainImageFile.type);
       hasUploads = true;
     }
@@ -180,7 +180,7 @@ export async function action({ request }) {
         return data({ errors: { additionalImages: `File ${file.name} exceeds 5MB limit.` }, values: v }, { status: 400 });
       }
       const buffer = await fileToBuffer(file);
-      const s3Key = buildS3Key(user.agencyId, "property", property._id.toString(), "gallery", file.name);
+      const s3Key = buildS3Key(user.organizationId, "property", property._id.toString(), "gallery", file.name);
       galleryKeys.push(await uploadToS3(buffer, s3Key, file.type));
       hasUploads = true;
     }

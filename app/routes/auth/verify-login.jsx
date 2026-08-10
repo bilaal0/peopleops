@@ -61,7 +61,7 @@ export async function action({ request }) {
     await pending.save();
 
     const user = await User.findOne({ email, deleted: { $ne: true } })
-      .select("_id roles agencyId")
+      .select("_id roles organizationId")
       .lean();
 
     if (!user) {
@@ -73,7 +73,7 @@ export async function action({ request }) {
     return await createUserSessionRedirect({
       userId: String(user._id),
       roles: user.roles || [],
-      agencyId: user.agencyId ? String(user.agencyId) : null,
+      organizationId: user.organizationId ? String(user.organizationId) : null,
       remember,
       redirectTo: "/dashboard",
     });

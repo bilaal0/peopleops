@@ -53,8 +53,8 @@ const userSchema = new Schema(
     // THE KEY FIELDS
     selfManaging: { type: Boolean, default: true },
 
-    // AgentShield — agency this user belongs to
-    agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', default: null },
+    // AgentShield — organization this user belongs to
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', default: null },
 
     // Invitation Flow
     inviteToken: { type: String, index: true },
@@ -145,11 +145,11 @@ const userSchema = new Schema(
 );
 
 // Add indexes for landlordData
-userSchema.index({ agencyId: 1, 'landlordData.amlResult': 1 });
+userSchema.index({ organizationId: 1, 'landlordData.amlResult': 1 });
 
 // Add indexes for tenantData
-userSchema.index({ agencyId: 1, 'tenantData.rightToRentExpiry': 1 });
-userSchema.index({ agencyId: 1, 'tenantData.referencingPassed': 1 });
+userSchema.index({ organizationId: 1, 'tenantData.rightToRentExpiry': 1 });
+userSchema.index({ organizationId: 1, 'tenantData.referencingPassed': 1 });
 
 
 // Hash password before save (fixes the early-return bug)

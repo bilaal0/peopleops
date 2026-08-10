@@ -7,20 +7,20 @@ import { Tenancy } from "../models/tenancy.server.js";
 import { Document } from "../models/document.server.js";
 import { DocumentType } from "../models/documentType.server.js";
 import { RentPayment } from "../models/rentPayment.server.js";
-import { Agency } from "../models/agency.server.js";
+import { Organization } from "../models/organization.server.js";
 import { MaintenanceJob } from "../models/MaintenanceJob.server.js";
 import { Note } from "../models/note.server.js";
 import { calculateArrearsStatus } from "./rent-payment.js";
 import { uploadToS3, getPresignedUrl } from "./s3.server.js";
 
 // ── 1. Fetch all data needed for the bundle ───────────────────────────────────
-export async function fetchBundleData(tenancyId, agencyId) {
+export async function fetchBundleData(tenancyId, organizationId) {
   await connect();
 
   // 1a. Full tenancy with all populated fields
   const tenancy = await Tenancy.findOne({
     _id: tenancyId,
-    agencyId,
+    organizationId,
     deleted: false,
   })
     .populate(
@@ -47,7 +47,7 @@ export async function fetchBundleData(tenancyId, agencyId) {
   const documents = await Document.find({
     entityType: "tenancy",
     entityId: tenancyId,
-    agencyId,
+    organizationId,
     deleted: false,
   })
     .populate("docType", "name key")
@@ -72,7 +72,7 @@ export async function fetchBundleData(tenancyId, agencyId) {
     ? await Document.find({
         entityType: "property",
         entityId: tenancy.propertyId._id,
-        agencyId,
+        organizationId,
         docType: { $in: certDocTypes.map((dt) => dt._id) },
         deleted: false,
       })
@@ -98,7 +98,7 @@ export async function fetchBundleData(tenancyId, agencyId) {
   // 1d. Rent payments (last 24 months, newest first)
   const rentPayments = await RentPayment.find({
     tenancyId,
-    agencyId,
+    organizationId,
     deleted: false,
   })
     .populate("recordedBy", "title firstName lastName")
@@ -109,13 +109,13 @@ export async function fetchBundleData(tenancyId, agencyId) {
   // 1e. Arrears calculation (reuses existing utility)
   const arrearsStatus = calculateArrearsStatus(rentPayments);
 
-  // 1f. Agency details
-  const agency = await Agency.findById(agencyId).lean();
+  // 1f. Organization details
+  const organization = await Organization.findById(organizationId).lean();
 
   // 1g. Activity log — system events for this tenancy, oldest-first (narrative order for PDF)
   // Rule: isSystem: true only — manual notes are private agent context, never appear in PDF
   const activityLog = await Note.find({
-    agencyId,
+    organizationId,
     entityType: "tenancy",
     entityId:   tenancyId,
     isSystem:   true,
@@ -130,7 +130,7 @@ export async function fetchBundleData(tenancyId, agencyId) {
   // regardless of whether the job was linked to this specific tenancy record.
   // Only include jobs created on or after tenancy start — exclude pre-tenancy work.
   const closedJobs = await MaintenanceJob.find({
-    agencyId,
+    organizationId,
     propertyId: tenancy.propertyId._id,
     status:     "closed",
     deleted:    { $ne: true },
@@ -146,7 +146,7 @@ export async function fetchBundleData(tenancyId, agencyId) {
     certificates,
     rentPayments,
     arrearsStatus,
-    agency,
+    organization,
     propertyImageUrl,
     activityLog,
     closedJobs,
@@ -218,10 +218,10 @@ export async function generatePDF(html) {
 }
 
 // ── 3. Upload bundle to S3 and return presigned URL ───────────────────────────
-export async function uploadBundleToS3(pdfBuffer, tenancyId, agencyId) {
+export async function uploadBundleToS3(pdfBuffer, tenancyId, organizationId) {
   // Key overwrites previous bundle — always freshest data, no versioning needed.
-  // Matches existing S3 key convention: {agencyId}/...
-  const s3Key = `${agencyId}/evidence-bundles/${tenancyId}/bundle.pdf`;
+  // Matches existing S3 key convention: {organizationId}/...
+  const s3Key = `${organizationId}/evidence-bundles/${tenancyId}/bundle.pdf`;
 
   await uploadToS3(pdfBuffer, s3Key, "application/pdf");
 

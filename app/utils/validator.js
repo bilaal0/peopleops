@@ -2,56 +2,56 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 export function validateLogin(values = {}) {
-  const rawEmail = String(values.email || "");
-  const password = String(values.password || "");
+    const rawEmail = String(values.email || "");
+    const password = String(values.password || "");
 
-  const email = rawEmail.trim().toLowerCase();
-  const errors = {};
+    const email = rawEmail.trim().toLowerCase();
+    const errors = {};
 
-  if (!email) errors.email = "Email is required";
-  else if (!EMAIL_RE.test(email)) errors.email = "Enter a valid email address";
+    if (!email) errors.email = "Email is required";
+    else if (!EMAIL_RE.test(email)) errors.email = "Enter a valid email address";
 
-  if (!password) errors.password = "Password is required";
-  else if (password.length < 8) errors.password = "Password must be at least 8 characters";
+    if (!password) errors.password = "Password is required";
+    else if (password.length < 8) errors.password = "Password must be at least 8 characters";
 
-  return {
-    valid: Object.keys(errors).length === 0,
-    errors,
-    values: { email }, // never echo password
-  };
+    return {
+        valid: Object.keys(errors).length === 0,
+        errors,
+        values: { email }, // never echo password
+    };
 }
 
 export function validateSignup(values = {}) {
-  const rawEmail = String(values.email || "");
-  const password = String(values.password || "");
-  const confirmPassword = String(values.confirmPassword || "");
+    const rawEmail = String(values.email || "");
+    const password = String(values.password || "");
+    const confirmPassword = String(values.confirmPassword || "");
 
-  const email = rawEmail.trim().toLowerCase();
-  const errors = {};
+    const email = rawEmail.trim().toLowerCase();
+    const errors = {};
 
-  if (!email) errors.email = "Email is required";
-  else if (!EMAIL_RE.test(email)) errors.email = "Enter a valid email address";
+    if (!email) errors.email = "Email is required";
+    else if (!EMAIL_RE.test(email)) errors.email = "Enter a valid email address";
 
-  if (!password) errors.password = "Password is required";
-  else if (password.length < 8) errors.password = "Password must be at least 8 characters";
+    if (!password) errors.password = "Password is required";
+    else if (password.length < 8) errors.password = "Password must be at least 8 characters";
 
-  if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match";
+    if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match";
 
-  return {
-    valid: Object.keys(errors).length === 0,
-    errors,
-    values: { email }, // never echo password
-  };
+    return {
+        valid: Object.keys(errors).length === 0,
+        errors,
+        values: { email }, // never echo password
+    };
 }
 
-export function validateAgency(values = {}) {
+export function validateOrganization(values = {}) {
     const errors = {};
     const name = String(values.name || "").trim();
     const isBranch = Boolean(values.isBranch);
     const parentId = String(values.parentId || "").trim();
     const propertyLimit = Number(values.propertyLimit);
     const userLimit = Number(values.userLimit);
-    
+
     // Admin Details Validation
     const firstName = String(values.firstName || "").trim();
     const lastName = String(values.lastName || "").trim();
@@ -59,10 +59,10 @@ export function validateAgency(values = {}) {
     const phone = String(values.phone || "").trim();
 
     if (!name) {
-        errors.name = "Agency name is required";
+        errors.name = "Organization name is required";
     }
 
-    // Require admin details for new agencies (assuming this validator is used for creation)
+    // Require admin details for new organizations (assuming this validator is used for creation)
     if (!firstName) {
         errors.firstName = "First Name is required";
     }
@@ -81,14 +81,14 @@ export function validateAgency(values = {}) {
     }
 
     if (isBranch && !parentId) {
-        errors.parentId = "Parent Agency ID is required for branches";
+        errors.parentId = "Parent Organization ID is required for branches";
     }
 
-    if (isNaN(propertyLimit) || propertyLimit < 0) {
+    if (values.propertyLimit !== undefined && (isNaN(propertyLimit) || propertyLimit < 0)) {
         errors.propertyLimit = "Property limit must be a positive number";
     }
 
-    if (isNaN(userLimit) || userLimit < 0) {
+    if (values.userLimit !== undefined && (isNaN(userLimit) || userLimit < 0)) {
         errors.userLimit = "User limit must be a positive number";
     }
 

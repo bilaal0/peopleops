@@ -1,6 +1,6 @@
 // models/Contractor.server.js
-// Stores the agency's preferred contractor list with trades and accreditations.
-// No contractor marketplace — just the agency's own list.
+// Stores the organization's preferred contractor list with trades and accreditations.
+// No contractor marketplace — just the organization's own list.
 
 import { mongoose } from "../config/db.server.js";
 
@@ -8,10 +8,10 @@ const { Schema } = mongoose;
 
 const contractorSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -113,7 +113,7 @@ const contractorSchema = new Schema(
     isPreferred: {
       type: Boolean,
       default: false,
-      // Agency's preferred contractor for a trade
+      // Organization's preferred contractor for a trade
       // Shown first in contractor selection dropdowns
     },
     notes: {
@@ -145,10 +145,10 @@ const contractorSchema = new Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-contractorSchema.index({ agencyId: 1, trades: 1 });
-contractorSchema.index({ agencyId: 1, isPreferred: 1 });
-contractorSchema.index({ agencyId: 1, status: 1 });
-contractorSchema.index({ agencyId: 1, deleted: 1 });
+contractorSchema.index({ organizationId: 1, trades: 1 });
+contractorSchema.index({ organizationId: 1, isPreferred: 1 });
+contractorSchema.index({ organizationId: 1, status: 1 });
+contractorSchema.index({ organizationId: 1, deleted: 1 });
 
 export const Contractor =
   mongoose.models.Contractor ||

@@ -6,12 +6,12 @@ import { MaintenanceJob } from "../models/MaintenanceJob.server.js";
 import { Contractor } from "../models/Contractor.server.js";
 import { Note } from "../models/note.server.js";
 
-export async function verifyEntityAgency(entityType, entityId, agencyId) {
+export async function verifyEntityOrganization(entityType, entityId, organizationId) {
   switch (entityType) {
     case "property": {
       const property = await Property.findOne({
         _id: entityId,
-        agencyId,
+        organizationId,
         deleted: false,
       }).lean();
       return !!property;
@@ -21,7 +21,7 @@ export async function verifyEntityAgency(entityType, entityId, agencyId) {
       // entityId is the User._id of the landlord
       const landlord = await User.findOne({
         _id: entityId,
-        agencyId,
+        organizationId,
         roles: "LANDLORD",
       }).lean();
       return !!landlord;
@@ -31,7 +31,7 @@ export async function verifyEntityAgency(entityType, entityId, agencyId) {
       // Complete when tenant module is built
       const tenant = await User.findOne({
         _id: entityId,
-        agencyId,
+        organizationId,
         roles: "TENANT",
       }).lean();
       return !!tenant;
@@ -40,7 +40,7 @@ export async function verifyEntityAgency(entityType, entityId, agencyId) {
     case "tenancy": {
       const tenancy = await Tenancy.findOne({
         _id: entityId,
-        agencyId,
+        organizationId,
         deleted: false,
       }).lean();
       return !!tenancy;
@@ -49,7 +49,7 @@ export async function verifyEntityAgency(entityType, entityId, agencyId) {
     case "maintenance_job": {
       const job = await MaintenanceJob.findOne({
         _id: entityId,
-        agencyId,
+        organizationId,
         deleted: false,
       }).lean();
       return !!job;
@@ -58,7 +58,7 @@ export async function verifyEntityAgency(entityType, entityId, agencyId) {
     case "contractor": {
       const contractor = await Contractor.findOne({
         _id: entityId,
-        agencyId,
+        organizationId,
         deleted: false,
       }).lean();
       return !!contractor;
@@ -69,18 +69,18 @@ export async function verifyEntityAgency(entityType, entityId, agencyId) {
   }
 }
 
-export async function getNotesForEntity(entityType, entityId, agencyId, page = 1) {
+export async function getNotesForEntity(entityType, entityId, organizationId, page = 1) {
   const limit = 10;
 
   const [notes, total] = await Promise.all([
-    Note.find({ agencyId, entityType, entityId })
+    Note.find({ organizationId, entityType, entityId })
       .populate("addedBy", "title firstName lastName email")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
 
-    Note.countDocuments({ agencyId, entityType, entityId }),
+    Note.countDocuments({ organizationId, entityType, entityId }),
   ]);
 
   return {
@@ -99,7 +99,7 @@ export async function getNotesForEntity(entityType, entityId, agencyId, page = 1
             _id: n.addedBy._id.toString(),
           }
         : null,
-      agencyId: n.agencyId?.toString(),
+      organizationId: n.organizationId?.toString(),
       entityId: n.entityId?.toString(),
     })),
     total,

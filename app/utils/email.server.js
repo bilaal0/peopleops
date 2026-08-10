@@ -30,7 +30,7 @@ function getTransporter() {
 export async function sendEmail({ to, subject, html, text, from }) {
   try {
     const t = getTransporter();
-    const fromAddr = from || process.env.SMTP_FROM || `Proplet <${process.env.SMTP_USER}>`;
+    const fromAddr = from || process.env.SMTP_FROM || `PeopleOps <${process.env.SMTP_USER}>`;
     return await t.sendMail({ from: fromAddr, to, subject, html, text });
   } catch (error) {
     console.error("Failed to send email via SMTP:", error.message);
@@ -58,9 +58,9 @@ export async function sendEmail({ to, subject, html, text, from }) {
 // Simple helpers for brand/context
 function brand() {
   return {
-    companyName: process.env.SITENAME || "Proplet",
+    companyName: process.env.SITENAME || "PeopleOps",
     logoUrl: process.env.SITE_LOGO_URL || "",
-    supportEmail: process.env.WEB_ADMIN_EMAIL || "support@proplet.co.uk",
+    supportEmail: process.env.WEB_ADMIN_EMAIL || "support@peopleops.co.uk",
     siteUrl: process.env.SITE_URL || "http://localhost:5173",
   };
 }
@@ -139,7 +139,7 @@ function emailAlreadyExistsTemplate({ email }) {
   return { subject, html, text };
 }
 
-function agencyInviteTemplate({ email, inviteLink, orgName }) {
+function organizationInviteTemplate({ email, inviteLink, orgName }) {
   const { companyName, supportEmail } = brand();
   const subject = `You've been invited to join ${orgName || companyName}`;
 
@@ -214,6 +214,6 @@ function forgotPasswordTemplate({ email, resetLink }) {
 export const emailTemplates = {
   otpVerification: otpVerificationTemplate,
   emailAlreadyExists: emailAlreadyExistsTemplate,
-  agencyInvite: agencyInviteTemplate,
+  organizationInvite: organizationInviteTemplate,
   forgotPassword: forgotPasswordTemplate,
 };

@@ -1,7 +1,7 @@
 // utils/s3.server.js
 // ─────────────────────────────────────────────────────────────────────────────
 // AWS S3 helpers for file upload, secure streaming download, and deletion.
-// S3 key convention: {agencyId}/{entityType}/{entityId}/{docType}/{uuid}.{ext}
+// S3 key convention: {organizationId}/{entityType}/{entityId}/{docType}/{uuid}.{ext}
 // NEVER expose raw S3 keys or presigned URLs to the client.
 // ─────────────────────────────────────────────────────────────────────────────
 import {
@@ -37,12 +37,12 @@ export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 // ── Key generation ────────────────────────────────────────────────────────────
 /**
  * Build an S3 key for a document.
- * e.g. "agency123/landlord/landlord456/aml_report/abc123.pdf"
+ * e.g. "organization123/landlord/landlord456/aml_report/abc123.pdf"
  */
-export function buildS3Key(agencyId, entityType, entityId, docType, originalName) {
+export function buildS3Key(organizationId, entityType, entityId, docType, originalName) {
   const ext  = path.extname(originalName).toLowerCase() || ".bin";
   const uuid = randomBytes(8).toString("hex");
-  return `${agencyId}/${entityType}/${entityId}/${docType}/${uuid}${ext}`;
+  return `${organizationId}/${entityType}/${entityId}/${docType}/${uuid}${ext}`;
 }
 
 export async function uploadToS3(fileBuffer, s3Key, contentType) {

@@ -1,11 +1,11 @@
 /**
- * Utility function to get the displayable URL for an agency logo.
+ * Utility function to get the displayable URL for an organization logo.
  * Handles S3 keys, local paths, HTTP URLs, data URLs, and default fallback.
  * 
  * @param {string|null|undefined} image 
  * @returns {string|null}
  */
-export function getAgencyLogoUrl(image) {
+export function getOrganizationLogoUrl(image) {
   if (!image || image === "no-image.png") {
     return null;
   }

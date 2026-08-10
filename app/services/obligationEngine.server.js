@@ -50,7 +50,7 @@ export async function seedObligationsForTenancy(tenancy, userId, ipAddress) {
     }
 
     return {
-      agencyId: tenancy.agencyId,
+      organizationId: tenancy.organizationId,
       tenancyId: tenancy._id,
       obligationTypeId: type._id,
       dueDate,
@@ -64,7 +64,7 @@ export async function seedObligationsForTenancy(tenancy, userId, ipAddress) {
 
   // Write to immutable audit log
   await AuditLog.create({
-    agencyId: tenancy.agencyId,
+    organizationId: tenancy.organizationId,
     tenancyId: tenancy._id,
     userId,
     action: "tenancy_created",
@@ -151,7 +151,7 @@ export async function recalculateOverdueObligations() {
 export async function logObligation({
   obligationId,
   userId,
-  agencyId,
+  organizationId,
   tenancyId,
   declarationText,
   ipAddress,
@@ -159,7 +159,7 @@ export async function logObligation({
   await connect();
 
   const obligation = await Obligation.findOneAndUpdate(
-    { _id: obligationId, agencyId }, // Agency scope — cannot log another agency's obligation
+    { _id: obligationId, organizationId }, // Organization scope — cannot log another organization's obligation
     {
       $set: {
         status: "logged",
@@ -183,7 +183,7 @@ export async function logObligation({
 
     // Create the next obligation instance
     await Obligation.create({
-      agencyId,
+      organizationId,
       tenancyId,
       obligationTypeId: obligation.obligationTypeId,
       dueDate: nextDueDate,
@@ -193,7 +193,7 @@ export async function logObligation({
 
   // Write to audit log (immutable)
   await AuditLog.create({
-    agencyId,
+    organizationId,
     tenancyId,
     userId,
     action: "obligation_logged",
@@ -211,20 +211,20 @@ export async function logObligation({
 }
 
 /**
- * Get portfolio risk summary for an agency.
+ * Get portfolio risk summary for an organization.
  * Used on the compliance dashboard.
  */
-export async function getPortfolioRiskSummary(agencyId) {
+export async function getPortfolioRiskSummary(organizationId) {
   await connect();
 
   const [pending, overdue, logged] = await Promise.all([
-    Obligation.countDocuments({ agencyId, status: "pending" }),
-    Obligation.countDocuments({ agencyId, status: "overdue" }),
-    Obligation.countDocuments({ agencyId, status: "logged" }),
+    Obligation.countDocuments({ organizationId, status: "pending" }),
+    Obligation.countDocuments({ organizationId, status: "overdue" }),
+    Obligation.countDocuments({ organizationId, status: "logged" }),
   ]);
 
   // Calculate estimated fine exposure from overdue obligations
-  const overdueWithTypes = await Obligation.find({ agencyId, status: "overdue" })
+  const overdueWithTypes = await Obligation.find({ organizationId, status: "overdue" })
     .populate("obligationTypeId", "fineMaxGbp")
     .lean();
 

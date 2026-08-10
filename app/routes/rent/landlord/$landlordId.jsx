@@ -4,7 +4,7 @@
 // and manages landlord bank details inline.
 //
 // Rules (from Section 10):
-// - Agency isolation: verified on user and queries
+// - Organization isolation: verified on user and queries
 // - 2dp rounding
 // - Soft delete only
 // - Premium design with interactive forms/modals
@@ -39,10 +39,10 @@ import {
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   // 1. Month/Year Navigation from URL
   const url = new URL(request.url);
   const selectedYear = parseInt(url.searchParams.get("year")) || new Date().getFullYear();
@@ -50,18 +50,18 @@ export async function loader({ request, params }) {
   const yearEnd = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
 
   // 2. Fetch Landlord with isolation
-  const landlord = await User.findOne({ _id: landlordId, agencyId, roles: "LANDLORD", deleted: false }).lean();
+  const landlord = await User.findOne({ _id: landlordId, organizationId, roles: "LANDLORD", deleted: false }).lean();
   if (!landlord) {
     return redirect("/rent");
   }
 
   // 3. Fetch landlord's properties
-  const properties = await Property.find({ landlordId, agencyId, deleted: false }).select("addressLine1 city").lean();
+  const properties = await Property.find({ landlordId, organizationId, deleted: false }).select("addressLine1 city").lean();
 
   // 4. Fetch Disbursements (newest first, filtered by year)
   const disbursements = await Disbursement.find({ 
     landlordId, 
-    agencyId, 
+    organizationId, 
     deleted: false,
     periodStart: { $gte: yearStart, $lte: yearEnd }
   })
@@ -71,7 +71,7 @@ export async function loader({ request, params }) {
   // 5. Fetch Rent Payments across all properties of this landlord (filtered by year)
   const payments = await RentPayment.find({ 
     landlordId, 
-    agencyId, 
+    organizationId, 
     deleted: false,
     periodStart: { $gte: yearStart, $lte: yearEnd }
   })
@@ -143,7 +143,7 @@ export async function action({ request, params }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const { landlordId } = params;
 
   const formData = await request.formData();
@@ -155,7 +155,7 @@ export async function action({ request, params }) {
     const sortCode = formData.get("sortCode");
     const bankName = formData.get("bankName");
 
-    const landlord = await User.findOne({ _id: landlordId, agencyId, roles: "LANDLORD" });
+    const landlord = await User.findOne({ _id: landlordId, organizationId, roles: "LANDLORD" });
     if (!landlord) {
       return { success: false, error: "Landlord not found." };
     }
@@ -180,7 +180,7 @@ export async function action({ request, params }) {
 
   if (intent === "download-pdf") {
     try {
-      const landlord = await User.findOne({ _id: landlordId, agencyId, roles: "LANDLORD" });
+      const landlord = await User.findOne({ _id: landlordId, organizationId, roles: "LANDLORD" });
       if (!landlord) return { success: false, error: "Landlord not found." };
       
       const html = `
@@ -198,7 +198,7 @@ export async function action({ request, params }) {
       `;
 
       const pdfBuffer = await generatePDF(html);
-      const s3Key = `${agencyId}/statements/${landlordId}/${new Date().getFullYear()}.pdf`;
+      const s3Key = `${organizationId}/statements/${landlordId}/${new Date().getFullYear()}.pdf`;
       await uploadToS3(pdfBuffer, s3Key, "application/pdf");
       const downloadUrl = await getPresignedUrl(s3Key);
 

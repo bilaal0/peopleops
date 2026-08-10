@@ -6,9 +6,9 @@ const { Schema } = mongoose;
 
 const obligationSchema = new Schema(
   {
-    agencyId: {
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -34,7 +34,7 @@ const obligationSchema = new Schema(
       default: "pending",
     },
 
-    // Declaration — filled when agency user logs this obligation
+    // Declaration — filled when organization user logs this obligation
     declaredBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     declaredAt: { type: Date, default: null },
     declarationText: { type: String, default: null }, // Stored verbatim for evidence vault

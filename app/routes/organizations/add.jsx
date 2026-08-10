@@ -1,43 +1,52 @@
 import { redirect, data, useActionData, useNavigate } from "react-router";
 import crypto from "crypto";
-import AgencyForm from "../../components/agencies/AgencyForm.jsx";
+import OrganizationForm from "../../components/organizations/OrganizationForm.jsx";
 import { User } from "../../models/user.server.js";
-import { Agency } from "../../models/agency.server.js";
-import { validateAgency } from "../../utils/validator";
+import { Organization } from "../../models/organization.server.js";
+import { validateOrganization } from "../../utils/validator";
 import { toast } from "react-hot-toast";
 import { sendEmail, emailTemplates } from "../../utils/email.server";
 
-import { requireUserRole } from "../../utils/auth.server";
+import { requireUserSession } from "../../utils/auth.server";
 import { Roles } from "../../utils/permission";
-import { uploadAgencyLogo } from "../../utils/uploadAgencyLogo.server.js";
+import { uploadOrganizationLogo } from "../../utils/uploadOrganizationLogo.server.js";
 
 export async function loader({ request }) {
-  const user = await requireUserRole(request, Roles.SUPER_ADMIN);
+  const user = await requireUserSession(request);
+  if (!user.roles?.includes(Roles.SUPER_ADMIN)) {
+    throw new Response("Unauthorized", { status: 403 });
+  }
   return { user };
 }
 
 export async function action({ request }) {
+  const user = await requireUserSession(request);
+  if (!user.roles?.includes(Roles.SUPER_ADMIN)) {
+    throw new Response("Unauthorized", { status: 403 });
+  }
+
   const formData = await request.formData();
   const values = Object.fromEntries(formData);
+  console.log("[add.jsx action] Received form submission:", values.name);
 
   // Handle checkboxes
   values.isBranch = values.isBranch === "true" || values.isBranch === "on";
   values.canCreateBranches = values.canCreateBranches === "true" || values.canCreateBranches === "on";
 
   // Validate
-  const { valid, errors } = validateAgency(values);
+  const { valid, errors } = validateOrganization(values);
   if (!valid) {
     return data({ errors }, { status: 400 });
   }
 
   try {
-    // 1. Check if agency exists
-    const existingOrg = await Agency.findOne({
+    // 1. Check if organization exists
+    const existingOrg = await Organization.findOne({
       name: { $regex: new RegExp(`^${values.name}$`, 'i') }
     });
 
     if (existingOrg) {
-      return data({ errors: { name: "Agency already exists" } }, { status: 400 });
+      return data({ errors: { name: "Organization already exists" } }, { status: 400 });
     }
 
     // 2. Handle Primary Admin (User)
@@ -56,6 +65,11 @@ export async function action({ request }) {
         email: values.email,
         phone: values.phone,
         addressLine1: values.addressLine1,
+        addressLine2: values.addressLine2,
+        addressLine3: values.addressLine3,
+        city: values.city,
+        postTown: values.postTown,
+        postcode: values.postcode,
         roles: ["MASTER_ADMIN"],
         status: 0, // Inactive until they accept invite
         emailVerified: false,
@@ -68,6 +82,12 @@ export async function action({ request }) {
       adminUser.inviteExpires = tokenExpires;
       adminUser.firstName = values.firstName || adminUser.firstName;
       adminUser.lastName = values.lastName || adminUser.lastName;
+      adminUser.addressLine1 = values.addressLine1 || adminUser.addressLine1;
+      adminUser.addressLine2 = values.addressLine2 || adminUser.addressLine2;
+      adminUser.addressLine3 = values.addressLine3 || adminUser.addressLine3;
+      adminUser.city = values.city || adminUser.city;
+      adminUser.postTown = values.postTown || adminUser.postTown;
+      adminUser.postcode = values.postcode || adminUser.postcode;
       await adminUser.save();
     } else {
       // User already verified — they already have an account
@@ -82,7 +102,7 @@ export async function action({ request }) {
     try {
       await sendEmail({
         to: values.email,
-        ...emailTemplates.agencyInvite({
+        ...emailTemplates.organizationInvite({
           email: values.email,
           inviteLink,
           orgName: values.name
@@ -93,8 +113,8 @@ export async function action({ request }) {
       console.error("❌ Failed to send invite email:", emailError);
     }
 
-    // 3. Create Agency
-    const newOrg = await Agency.create({
+    // 3. Create Organization
+    const newOrg = await Organization.create({
       name: values.name,
       slug: values.slug || values.name.toLowerCase().replace(/\s+/g, '-'),
       image: "no-image.png",
@@ -112,26 +132,26 @@ export async function action({ request }) {
 
     const imageFile = formData.get("image");
     if (imageFile && typeof imageFile === "object" && imageFile.size > 0) {
-      const uploadedKey = await uploadAgencyLogo(newOrg._id.toString(), imageFile);
+      const uploadedKey = await uploadOrganizationLogo(newOrg._id.toString(), imageFile);
       if (uploadedKey) {
         newOrg.image = uploadedKey;
         await newOrg.save();
       }
     }
 
-    // 4. Link User to Agency
-    adminUser.agencyId = newOrg._id;
+    // 4. Link User to Organization
+    adminUser.organizationId = newOrg._id;
     await adminUser.save();
 
     return redirect("/organizations");
 
   } catch (error) {
-    console.error("Error creating agency:", error);
-    return data({ errors: { submit: "Failed to create agency" } }, { status: 500 });
+    console.error("Error creating organization:", error);
+    return data({ errors: { submit: "Failed to create organization" } }, { status: 500 });
   }
 }
 
-export default function AddAgencyPage() {
+export default function AddOrganizationPage() {
   const navigate = useNavigate();
   const actionData = useActionData();
 
@@ -147,7 +167,7 @@ export default function AddAgencyPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <AgencyForm
+        <OrganizationForm
           onCancel={() => navigate("/organizations")}
           submitLabel="Create Organization"
           serverErrors={actionData?.errors}

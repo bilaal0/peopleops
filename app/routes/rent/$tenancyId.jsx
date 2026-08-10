@@ -5,7 +5,7 @@
 // and landlord disbursements history.
 //
 // Rules (from Section 10):
-// - Agency isolation: query checked against user.agencyId
+// - Organization isolation: query checked against user.organizationId
 // - Soft delete only
 // - 2dp rounding
 // - Premium design with interactive features
@@ -37,14 +37,14 @@ import {
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const { tenancyId } = params;
 
   // 1. Fetch Tenancy with isolation
-  const tenancy = await Tenancy.findOne({ _id: tenancyId, agencyId })
+  const tenancy = await Tenancy.findOne({ _id: tenancyId, organizationId })
     .populate("propertyId", "addressLine1 city commission")
     .populate("landlordId", "title firstName lastName email phone")
     .populate("tenantIds", "title firstName lastName email phone")
@@ -55,7 +55,7 @@ export async function loader({ request, params }) {
   }
 
   // 2. Fetch all rent payments for this tenancy (all time, newest first)
-  const payments = await RentPayment.find({ tenancyId, agencyId, deleted: false })
+  const payments = await RentPayment.find({ tenancyId, organizationId, deleted: false })
     .sort({ dueDate: -1 })
     .lean();
 
@@ -75,7 +75,7 @@ export async function loader({ request, params }) {
   // 5. Fetch all disbursements that covered this tenancy's payments
   const paymentIds = payments.map(p => p._id);
   const disbursements = await Disbursement.find({
-    agencyId,
+    organizationId,
     rentPaymentIds: { $in: paymentIds },
     deleted: false
   })

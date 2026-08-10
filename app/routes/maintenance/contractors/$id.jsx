@@ -25,13 +25,13 @@ import {
 export async function loader({ params, request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
   const contractor = await Contractor.findOne({
     _id: params.id,
-    agencyId: user.agencyId, // Agency isolation
+    organizationId: user.organizationId, // Organization isolation
     deleted: false,
   }).lean();
 
@@ -39,7 +39,7 @@ export async function loader({ params, request }) {
 
   const jobs = await MaintenanceJob.find({
     contractorId: contractor._id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: false,
   })
     .populate("propertyId", "addressLine1")
@@ -73,7 +73,7 @@ export async function action({ params, request }) {
 
   const contractor = await Contractor.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   });
   if (!contractor) return { error: "Contractor not found." };
 

@@ -21,14 +21,14 @@ const formatDate = (dateString) => {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
 
   // Fetch all tenants, including deleted/archived so we can filter them in the UI
   const query = { roles: "TENANT" };
   if (!user.roles?.includes("SUPER_ADMIN")) {
-    query.agencyId = user.agencyId;
+    query.organizationId = user.organizationId;
   }
 
   const users = await User.find(query)
@@ -38,7 +38,7 @@ export async function loader({ request }) {
   return {
     tenants: users.map(u => ({
       _id: u._id.toString(),
-      agencyId: u.agencyId?.toString(),
+      organizationId: u.organizationId?.toString(),
       firstName: u.firstName || "",
       lastName: u.lastName || "",
       email: u.email || "",
@@ -193,7 +193,7 @@ export default function TenantsIndex() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage and track your agency's tenants.</p>
+          <p className="text-sm text-gray-500 mt-1">Manage and track your organization's tenants.</p>
         </div>
         <Link
           to="/tenants/add"

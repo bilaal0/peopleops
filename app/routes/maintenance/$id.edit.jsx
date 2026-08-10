@@ -16,13 +16,13 @@ import { Wrench, Calendar, Info, Loader2 } from "lucide-react";
 export async function loader({ params, request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
   const job = await MaintenanceJob.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   }).lean();
 
@@ -41,7 +41,7 @@ export async function loader({ params, request }) {
 export async function action({ params, request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -73,7 +73,7 @@ export async function action({ params, request }) {
 
   const job = await MaintenanceJob.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   });
 
   if (!job) return data({ error: "Job not found" }, { status: 404 });
@@ -98,7 +98,7 @@ export async function action({ params, request }) {
 
   // Audit event
   await createSystemEvent({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     entityType: "maintenance_job",
     entityId: job._id,
     eventType: "maintenance_job_updated",
@@ -284,7 +284,7 @@ export default function MaintenanceEdit() {
             >
               <option value="landlord">Landlord (Deduct from rent)</option>
               <option value="tenant">Tenant Liability</option>
-              <option value="agency">Agency Covered</option>
+              <option value="organization">Organization Covered</option>
               <option value="insurance">Insurance Claim</option>
               <option value="tbc">To Be Confirmed</option>
             </select>

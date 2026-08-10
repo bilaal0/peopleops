@@ -29,7 +29,7 @@ export async function loader({ params, request }) {
     client: {
       ...clientUser,
       _id: clientUser._id.toString(),
-      agencyId: clientUser.agencyId?.toString(),
+      organizationId: clientUser.organizationId?.toString(),
     },
     documents: docs.map((d) => ({
       _id:        d._id.toString(),
@@ -42,7 +42,7 @@ export async function loader({ params, request }) {
       notes:      d.notes || null,
       createdAt:  d.createdAt,
     })),
-    agencyId: user.agencyId?.toString() || null,
+    organizationId: user.organizationId?.toString() || null,
   };
 }
 
@@ -86,7 +86,7 @@ function DocDeleteButton({ documentId }) {
 }
 
 // ── Upload modal ──────────────────────────────────────────────────────────────
-function UploadModal({ clientId, agencyId, onClose }) {
+function UploadModal({ clientId, organizationId, onClose }) {
   const fetcher = useFetcher();
   const fileRef = useRef(null);
   const [fileName, setFileName] = useState("");
@@ -104,7 +104,7 @@ function UploadModal({ clientId, agencyId, onClose }) {
         <fetcher.Form method="post" action="/documents/upload" encType="multipart/form-data" className="p-5 space-y-4">
           <input type="hidden" name="entityType" value="client" />
           <input type="hidden" name="entityId" value={clientId} />
-          <input type="hidden" name="agencyId" value={agencyId || ""} />
+          <input type="hidden" name="organizationId" value={organizationId || ""} />
 
           {/* File drop zone */}
           <div
@@ -162,7 +162,7 @@ function UploadModal({ clientId, agencyId, onClose }) {
 }
 
 // ── Documents tab panel ───────────────────────────────────────────────────────
-function DocumentsPanel({ documents, clientId, agencyId }) {
+function DocumentsPanel({ documents, clientId, organizationId }) {
   const [showUpload, setShowUpload] = useState(false);
 
   return (
@@ -211,14 +211,14 @@ function DocumentsPanel({ documents, clientId, agencyId }) {
         </div>
       )}
 
-      {showUpload && <UploadModal clientId={clientId} agencyId={agencyId} onClose={() => setShowUpload(false)} />}
+      {showUpload && <UploadModal clientId={clientId} organizationId={organizationId} onClose={() => setShowUpload(false)} />}
     </div>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ClientDetailPage() {
-  const { client, documents, agencyId } = useLoaderData();
+  const { client, documents, organizationId } = useLoaderData();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -338,7 +338,7 @@ export default function ClientDetailPage() {
 
         {activeTab === "documents" && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs">
-            <DocumentsPanel documents={documents} clientId={client._id} agencyId={agencyId} />
+            <DocumentsPanel documents={documents} clientId={client._id} organizationId={organizationId} />
           </div>
         )}
       </div>

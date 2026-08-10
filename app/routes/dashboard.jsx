@@ -3,11 +3,11 @@ import { redirect, Link } from "react-router";
 import { useLoaderData } from "react-router-dom";
 import { getUserFromRequest } from "../utils/auth.server.js";
 import { connect } from "../config/db.server.js";
-import { Agency } from "../models/agency.server.js";
+import { Organization } from "../models/organization.server.js";
 import { User } from "../models/user.server.js";
-import { getAgencyDashboardData } from "../utils/dashboard.server.js";
+import { getOrganizationDashboardData } from "../utils/dashboard.server.js";
 import SuperAdminDashboard from "../components/dashboard/SuperAdminDashboard.jsx";
-import AgencyDashboard from "../components/dashboard/AgencyDashboard.jsx";
+import OrganizationDashboard from "../components/dashboard/OrganizationDashboard.jsx";
 
 export function headers() {
   return {
@@ -24,30 +24,30 @@ export async function loader({ request }) {
   await connect();
 
   // ── SUPER_ADMIN DASHBOARD (Platform Level) ────────────────────────────────
-  if (isSuperAdmin && !user.agencyId) {
-    const [totalAgencies, totalUsers] = await Promise.all([
-      Agency.countDocuments({ deleted: false }),
+  if (isSuperAdmin && !user.organizationId) {
+    const [totalOrganizations, totalUsers] = await Promise.all([
+      Organization.countDocuments({ deleted: false }),
       User.countDocuments({ deleted: false })
     ]);
 
-    return { user, agency: null, isSuperAdmin: true, stats: { totalAgencies, totalUsers } };
+    return { user, organization: null, isSuperAdmin: true, stats: { totalOrganizations, totalUsers } };
   }
 
-  // ── TENANT/STAFF WITHOUT AGENCY STATE ──────────────────────────────────────
-  if (!user.agencyId) {
-    return { user, stats: null, agency: null, isSuperAdmin: false };
+  // ── TENANT/STAFF WITHOUT ORGANIZATION STATE ──────────────────────────────────────
+  if (!user.organizationId) {
+    return { user, stats: null, organization: null, isSuperAdmin: false };
   }
 
-  // ── AGENCY DASHBOARD ───────────────────────────────────────────────────────
+  // ── ORGANIZATION DASHBOARD ───────────────────────────────────────────────────────
   
-  const [agency, dashboardData] = await Promise.all([
-    Agency.findById(user.agencyId).lean(),
-    getAgencyDashboardData(user.agencyId)
+  const [organization, dashboardData] = await Promise.all([
+    Organization.findById(user.organizationId).lean(),
+    getOrganizationDashboardData(user.organizationId)
   ]);
 
   return {
     user,
-    agency,
+    organization,
     isSuperAdmin,
     dashboardData,
   };
@@ -55,11 +55,11 @@ export async function loader({ request }) {
 
 
 export default function Dashboard() {
-  const { user, agency, stats, isSuperAdmin, dashboardData } = useLoaderData();
+  const { user, organization, stats, isSuperAdmin, dashboardData } = useLoaderData();
 
-  if (isSuperAdmin && !agency) {
+  if (isSuperAdmin && !organization) {
     return <SuperAdminDashboard stats={stats} />;
   }
 
-  return <AgencyDashboard agency={agency} dashboardData={dashboardData} user={user} />;
+  return <OrganizationDashboard organization={organization} dashboardData={dashboardData} user={user} />;
 }

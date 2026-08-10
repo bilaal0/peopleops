@@ -260,7 +260,7 @@ tr:nth-child(even) td { background:#F8FAFF; }
 
 // ── Section renderers ─────────────────────────────────────────────────────────
 function renderCover(data) {
-  const { tenancy, agency, generatedAt, generatedBy, propertyImageUrl } = data;
+  const { tenancy, organization, generatedAt, generatedBy, propertyImageUrl } = data;
   const p = tenancy.propertyId;
   const tenancyPeriod = `${fmtDate(tenancy.startDate)} – ${tenancy.endDate ? fmtDate(tenancy.endDate) : "Periodic (APT)"}`;
   
@@ -323,7 +323,7 @@ function renderCover(data) {
       </div>
       
       <div class="cover-footer">
-        <div>Agency: ${agency?.name || "Proplet Partner"}</div>
+        <div>Organization: ${organization?.name || "Proplet Partner"}</div>
         <div>Security ID: ${tenancy._id.toString().toUpperCase()}</div>
       </div>
     </div>
@@ -847,7 +847,7 @@ function renderDisclaimer(generatedAt, generatedBy) {
       Proplet is a record-keeping tool. This document does not constitute legal advice and does not
       guarantee compliance with any legislation. Always consult a qualified solicitor for specific
       legal guidance. The accuracy of this document depends entirely on the completeness and accuracy
-      of data entered into Proplet by the agency.
+      of data entered into Proplet by the organization.
     </div>`;
 }
 

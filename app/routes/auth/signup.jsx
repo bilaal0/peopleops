@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 // Book a Demo — public page replacing self-signup
-// Proplet is invitation-only. Agencies must book a demo first.
+// Proplet is invitation-only. Organizations must book a demo first.
 const DEMO_URL = typeof process !== "undefined"
   ? (process.env.DEMO_BOOKING_URL || "mailto:hello@proplet.co.uk")
   : "mailto:hello@proplet.co.uk";
@@ -83,8 +83,8 @@ export default function BookDemo() {
 
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Book a Demo</h1>
           <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-            Proplet is available by invitation only for UK letting agencies.<br />
-            Book a 30-minute demo to see how it can transform your agency.
+            Proplet is available by invitation only for UK letting organizations.<br />
+            Book a 30-minute demo to see how it can transform your organization.
           </p>
 
           {/* What to expect */}

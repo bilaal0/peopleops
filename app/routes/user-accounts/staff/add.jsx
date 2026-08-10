@@ -84,7 +84,7 @@ export async function action({ request }) {
       email: email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@temp.local`,
       phone,
       telephoneNo: phone,
-      agencyId: currentUser.agencyId || null,
+      organizationId: currentUser.organizationId || null,
       addedBy: currentUser._id,
     });
 

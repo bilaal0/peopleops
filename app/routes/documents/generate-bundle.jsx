@@ -11,7 +11,7 @@ export async function loader({ request }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const tenancies = await Tenancy.find({ agencyId: user.agencyId, status: "active", deleted: false })
+  const tenancies = await Tenancy.find({ organizationId: user.organizationId, status: "active", deleted: false })
     .populate("propertyId", "addressLine1 postcode")
     .populate("tenantIds", "firstName lastName title")
     .lean();

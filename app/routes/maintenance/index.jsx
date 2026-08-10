@@ -1,6 +1,6 @@
 // routes/maintenance/index.jsx
 // Maintenance Jobs dashboard / listing.
-// Enforces agency isolation, features KPI tiles, filters, and dynamic overdue/Awaab's Law banners.
+// Enforces organization isolation, features KPI tiles, filters, and dynamic overdue/Awaab's Law banners.
 
 import { Link, useLoaderData, useNavigate, useSearchParams } from "react-router-dom";
 import { redirect } from "react-router";
@@ -8,7 +8,7 @@ import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";
 import { MaintenanceJob } from "../../models/MaintenanceJob.server.js";
 import { Property } from "../../models/property.server.js";
-import { getMaintenanceSummaryForAgency } from "../../utils/maintenance.server.js";
+import { getMaintenanceSummaryForOrganization } from "../../utils/maintenance.server.js";
 import { fmtDate } from "../../utils/date.js";
 import {
   Wrench,
@@ -25,7 +25,7 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -36,11 +36,11 @@ export async function loader({ request }) {
   const propertyFilter = url.searchParams.get("propertyId") || "";
 
   // 1. Fetch KPI Summary metrics
-  const summary = await getMaintenanceSummaryForAgency(user.agencyId);
+  const summary = await getMaintenanceSummaryForOrganization(user.organizationId);
 
-  // 2. Build Query Filters (Respecting Soft Deletes and Agency Scope)
+  // 2. Build Query Filters (Respecting Soft Deletes and Organization Scope)
   const query = {
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   };
 
@@ -69,7 +69,7 @@ export async function loader({ request }) {
 
   // 5. Fetch Properties for filter dropdown
   const properties = await Property.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   })
     .select("addressLine1 postcode")

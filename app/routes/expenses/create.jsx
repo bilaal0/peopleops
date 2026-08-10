@@ -1,10 +1,10 @@
 // routes/expenses/create.jsx
 // Step 8 — Add Expense POST action route.
 // Called from the Add Expense modal in /transactions.
-// Handles optional receipt file upload to S3 before creating AgencyExpense.
+// Handles optional receipt file upload to S3 before creating OrganizationExpense.
 //
 // Rules (from Section 10):
-// - Agency isolation enforced
+// - Organization isolation enforced
 // - Rounding to 2dp
 // - Soft delete only
 // - Receipt stored via existing S3 + Document pattern
@@ -13,7 +13,7 @@
 import { redirect } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";
-import { AgencyExpense } from "../../models/agencyExpense.server.js";
+import { OrganizationExpense } from "../../models/organizationExpense.server.js";
 import { Document } from "../../models/document.server.js";
 import {
   buildS3Key,
@@ -34,7 +34,7 @@ export async function action({ request }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
 
   // Parse multipart/form-data (supports file upload)
   const formData = await request.formData();
@@ -73,8 +73,8 @@ export async function action({ request }) {
     // We need to create the expense first to get its ID for the S3 key.
     // So we create the expense without the receipt, then update.
     // (Standard pattern used in evidence vault: create entity → upload → update link)
-    const expense = await AgencyExpense.create({
-      agencyId,
+    const expense = await OrganizationExpense.create({
+      organizationId,
       category,
       description,
       amount,
@@ -87,9 +87,9 @@ export async function action({ request }) {
       createdBy:     user.userId,
     });
 
-    // Build S3 key: {agencyId}/expense/{expenseId}/receipt/{uuid}.{ext}
+    // Build S3 key: {organizationId}/expense/{expenseId}/receipt/{uuid}.{ext}
     const s3Key = buildS3Key(
-      agencyId,
+      organizationId,
       "expense",
       expense._id.toString(),
       "receipt",
@@ -101,7 +101,7 @@ export async function action({ request }) {
 
     // Create Document record pointing at the expense
     const doc = await Document.create({
-      agencyId,
+      organizationId,
       entityType:   "expense",
       entityId:     expense._id,
       documentType: "receipt",
@@ -120,8 +120,8 @@ export async function action({ request }) {
   }
 
   // ── No receipt — create expense directly ─────────────────
-  await AgencyExpense.create({
-    agencyId,
+  await OrganizationExpense.create({
+    organizationId,
     category,
     description,
     amount,

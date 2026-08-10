@@ -15,13 +15,13 @@ import { logMaintenanceStatusChanged } from "./activityLog.server.js";
 // ─────────────────────────────────────────────────────────────
 // JOB REFERENCE AUTO-GENERATION
 // Format: MJ-YYYY-NNNN  (e.g. MJ-2026-0001)
-// Sequential per agency. Pads to 4 digits.
+// Sequential per organization. Pads to 4 digits.
 // ─────────────────────────────────────────────────────────────
-export async function generateJobRef(agencyId) {
+export async function generateJobRef(organizationId) {
   const currentYear = new Date().getFullYear();
 
   const last = await MaintenanceJob.findOne(
-    { agencyId, jobRef: { $regex: `^MJ-${currentYear}-` } },
+    { organizationId, jobRef: { $regex: `^MJ-${currentYear}-` } },
     { jobRef: 1 },
     { sort: { createdAt: -1 } }
   ).lean();
@@ -93,12 +93,12 @@ export function applyAwaabsLawFlags(jobData) {
 
 // ─────────────────────────────────────────────────────────────
 // LANDLORD APPROVAL AUTO-FLAG
-// If estimatedCost exceeds the agency threshold (default £500),
+// If estimatedCost exceeds the organization threshold (default £500),
 // the job requires landlord approval before works begin.
 // ─────────────────────────────────────────────────────────────
-export function applyLandlordApprovalFlag(jobData, agencyThreshold = 500) {
+export function applyLandlordApprovalFlag(jobData, organizationThreshold = 500) {
   const cost = parseFloat(jobData.estimatedCost);
-  if (!isNaN(cost) && cost > agencyThreshold) {
+  if (!isNaN(cost) && cost > organizationThreshold) {
     return {
       ...jobData,
       requiresLandlordApproval: true,
@@ -166,7 +166,7 @@ export async function recordStatusChange(job, newStatus, user, extraNote = null)
 // Used by dashboard.server.js to populate the Maintenance card.
 // Returns: open count, emergency jobs, overdue jobs, awaabs jobs.
 // ─────────────────────────────────────────────────────────────
-export async function getMaintenanceSummaryForAgency(agencyId) {
+export async function getMaintenanceSummaryForOrganization(organizationId) {
   await connect();
 
   const today = new Date();
@@ -183,14 +183,14 @@ export async function getMaintenanceSummaryForAgency(agencyId) {
   ] = await Promise.all([
     // Open: any status that is not closed or cancelled
     MaintenanceJob.countDocuments({
-      agencyId,
+      organizationId,
       status: { $nin: ["closed", "cancelled"] },
       deleted: false,
     }),
 
     // Emergency: priority=emergency and not closed
     MaintenanceJob.find({
-      agencyId,
+      organizationId,
       priority: "emergency",
       status: { $nin: ["closed", "cancelled"] },
       deleted: false,
@@ -203,7 +203,7 @@ export async function getMaintenanceSummaryForAgency(agencyId) {
 
     // Overdue: past targetDate, not closed or cancelled
     MaintenanceJob.find({
-      agencyId,
+      organizationId,
       targetDate: { $lt: today },
       status: { $nin: ["closed", "cancelled"] },
       deleted: false,
@@ -216,7 +216,7 @@ export async function getMaintenanceSummaryForAgency(agencyId) {
 
     // Awaab's Law: active damp/mould jobs not closed
     MaintenanceJob.find({
-      agencyId,
+      organizationId,
       isAwaabsLaw: true,
       status: { $nin: ["closed", "cancelled"] },
       deleted: false,
@@ -228,7 +228,7 @@ export async function getMaintenanceSummaryForAgency(agencyId) {
 
     // Completed in last 30 days
     MaintenanceJob.countDocuments({
-      agencyId,
+      organizationId,
       status: { $in: ["completed", "closed"] },
       completedDate: { $gte: thirtyDaysAgo },
       deleted: false,
@@ -292,10 +292,10 @@ export async function generatePlannedMaintenanceJobs() {
     }
 
     // Auto-generate the job
-    const jobRef = await generateJobRef(schedule.agencyId);
+    const jobRef = await generateJobRef(schedule.organizationId);
 
     const jobData = applyAwaabsLawFlags({
-      agencyId:            schedule.agencyId,
+      organizationId:            schedule.organizationId,
       jobRef,
       propertyId:          schedule.propertyId,
       landlordId:          schedule.landlordId,

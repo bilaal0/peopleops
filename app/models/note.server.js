@@ -70,10 +70,10 @@ export const NOTE_EVENT_TYPES = [
 
 const noteSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -139,15 +139,15 @@ const noteSchema = new Schema(
 
 // ── Indexes ──────────────────────────────────────────────────
 
-noteSchema.index({ agencyId: 1, entityType: 1, entityId: 1 });
+noteSchema.index({ organizationId: 1, entityType: 1, entityId: 1 });
 // primary query index – all notes for a specific entity
 
-noteSchema.index({ agencyId: 1, addedBy: 1 });
+noteSchema.index({ organizationId: 1, addedBy: 1 });
 // useful for: find all notes added by a specific user
 
-noteSchema.index({ agencyId: 1, isSystem: 1 });
-noteSchema.index({ agencyId: 1, eventType: 1 });
-noteSchema.index({ agencyId: 1, createdAt: -1 });
+noteSchema.index({ organizationId: 1, isSystem: 1 });
+noteSchema.index({ organizationId: 1, eventType: 1 });
+noteSchema.index({ organizationId: 1, createdAt: -1 });
 
 export const Note =
   mongoose.models.Note || mongoose.model("Note", noteSchema);

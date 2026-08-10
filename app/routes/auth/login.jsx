@@ -103,7 +103,7 @@ export async function action({ request }) {
   return await createUserSessionRedirect({
     userId: String(user._id),
     roles: user.roles || [],
-    agencyId: user.agencyId || null,
+    organizationId: user.organizationId || null,
     remember,
     redirectTo: "/dashboard",
   });
@@ -170,7 +170,7 @@ export default function Login() {
                   defaultValue={actionData?.values?.email}
                   autoComplete="email"
                   required
-                  placeholder="you@agencyname.co.uk"
+                  placeholder="you@organizationname.co.uk"
                   readOnly={isPasswordStep}
                   className={`block w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm outline-none transition focus:ring-4 focus:ring-indigo-500/10 ${
                     actionData?.errors?.email

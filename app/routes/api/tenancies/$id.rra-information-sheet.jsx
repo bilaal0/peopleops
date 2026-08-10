@@ -16,16 +16,16 @@ const RRA_CUTOFF = new Date("2026-05-01");
 export async function action({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return data({ error: "Unauthorised" }, { status: 401 });
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) {
-    return data({ error: "No agency access" }, { status: 403 });
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) {
+    return data({ error: "No organization access" }, { status: 403 });
   }
 
   await connect();
 
-  // 1. Verify tenancy belongs to this agency
+  // 1. Verify tenancy belongs to this organization
   const tenancy = await Tenancy.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: false,
   }).populate("tenantIds", "title firstName lastName");
 
@@ -77,7 +77,7 @@ export async function action({ request, params }) {
     try {
       const fileBuffer = await fileToBuffer(proofFile);
       const s3Key = buildS3Key(
-        user.agencyId,
+        user.organizationId,
         "tenancy",
         params.id,
         "rra_information_sheet_proof",
@@ -86,7 +86,7 @@ export async function action({ request, params }) {
       await uploadToS3(fileBuffer, s3Key, proofFile.type);
 
       const doc = await Document.create({
-        agencyId:     user.agencyId,
+        organizationId:     user.organizationId,
         entityType:   "tenancy",
         entityId:     params.id,
         documentType: "rra_information_sheet_proof",

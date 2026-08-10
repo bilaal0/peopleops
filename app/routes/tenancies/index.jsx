@@ -24,7 +24,7 @@ const fmtRent = (n) =>
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN"))
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN"))
     return redirect("/dashboard");
 
   await connect();
@@ -36,10 +36,10 @@ export async function loader({ request }) {
   const limit = 25;
 
   const isSuperAdmin = user.roles?.includes("SUPER_ADMIN");
-  const agencyFilter = isSuperAdmin ? {} : { agencyId: user.agencyId };
+  const organizationFilter = isSuperAdmin ? {} : { organizationId: user.organizationId };
 
   // 1. Build Query
-  const query = { ...agencyFilter, deleted: false };
+  const query = { ...organizationFilter, deleted: false };
   if (statusParam && statusParam !== "all") {
     query.status = statusParam;
   }
@@ -48,8 +48,8 @@ export async function loader({ request }) {
   if (search.trim()) {
     const rx = new RegExp(search.trim(), "i");
     const [props, tenants] = await Promise.all([
-      Property.find({ ...agencyFilter, deleted: false, $or: [{ addressLine1: rx }, { postcode: rx }] }, "_id").lean(),
-      User.find({ ...agencyFilter, roles: "TENANT", deleted: false, $or: [{ firstName: rx }, { lastName: rx }] }, "_id").lean()
+      Property.find({ ...organizationFilter, deleted: false, $or: [{ addressLine1: rx }, { postcode: rx }] }, "_id").lean(),
+      User.find({ ...organizationFilter, roles: "TENANT", deleted: false, $or: [{ firstName: rx }, { lastName: rx }] }, "_id").lean()
     ]);
     query.$or = [
       { propertyId: { $in: props.map(p => p._id) } },
@@ -68,14 +68,14 @@ export async function loader({ request }) {
       .limit(limit)
       .lean(),
     Tenancy.countDocuments(query),
-    Tenancy.countDocuments({ ...agencyFilter, deleted: false, status: "active" }),
+    Tenancy.countDocuments({ ...organizationFilter, deleted: false, status: "active" }),
     Tenancy.countDocuments({
-      ...agencyFilter,
+      ...organizationFilter,
       deleted: false,
       status: "active",
       endDate: { $gte: new Date(), $lte: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) },
     }),
-    Tenancy.countDocuments({ ...agencyFilter, deleted: false, status: "ended" }),
+    Tenancy.countDocuments({ ...organizationFilter, deleted: false, status: "ended" }),
   ]);
 
   // Deep serialize Mongoose documents

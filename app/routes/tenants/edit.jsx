@@ -25,12 +25,12 @@ function parseDate(val) {
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
   const query = { _id: params.id, roles: "TENANT" };
   if (!user.roles?.includes("SUPER_ADMIN")) {
-    query.agencyId = user.agencyId;
+    query.organizationId = user.organizationId;
   }
 
   const profile = await User.findOne(query).lean();
@@ -97,7 +97,7 @@ export async function loader({ request, params }) {
 export async function action({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   const formData = await request.formData();
   const v = Object.fromEntries(formData);
@@ -160,7 +160,7 @@ export async function action({ request, params }) {
     } : null;
 
     // Find existing to preserve unchanged deep fields or rightToRentCheckedBy
-    const existing = await User.findOne({ _id: params.id, roles: "TENANT", ...(user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId }) }).lean();
+    const existing = await User.findOne({ _id: params.id, roles: "TENANT", ...(user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId }) }).lean();
     if (!existing) throw new Error("Tenant not found");
 
     // Update User record with tenantData
@@ -225,7 +225,7 @@ export async function action({ request, params }) {
 
     // ── Step 2: Handle S3 Upload if file present ───────────────────────────
     if (file && file.size > 0) {
-      const s3Key = buildS3Key(user.agencyId, "tenant", tenantUser._id.toString(), "right_to_rent", file.name);
+      const s3Key = buildS3Key(user.organizationId, "tenant", tenantUser._id.toString(), "right_to_rent", file.name);
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       await uploadToS3(buffer, s3Key, file.type);
@@ -233,7 +233,7 @@ export async function action({ request, params }) {
       const docTypeDoc = await DocumentType.findOne({ key: "right_to_rent" }).lean();
       if (docTypeDoc) {
         await Document.create({
-          agencyId:   user.agencyId,
+          organizationId:   user.organizationId,
           entityType: "tenant",
           entityId:   tenantUser._id,
           docType:    docTypeDoc._id,

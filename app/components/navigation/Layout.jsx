@@ -8,19 +8,19 @@ import { Toaster } from "react-hot-toast";
 export async function loader({ request }) {
   const { getUserFromRequest } = await import("../../utils/auth.server.js");
   const claims = await getUserFromRequest(request);
-  if (!claims) return { user: null, agency: null };
+  if (!claims) return { user: null, organization: null };
 
   const { connect } = await import("../../config/db.server.js");
   const { User } = await import("../../models/user.server.js");
-  const { Agency } = await import("../../models/agency.server.js");
+  const { Organization } = await import("../../models/organization.server.js");
 
   await connect();
-  const [user, agency] = await Promise.all([
-    User.findById(claims.userId).select("title firstName lastName email roles agencyId").lean(),
-    claims.agencyId ? Agency.findById(claims.agencyId).select("name image").lean() : null
+  const [user, organization] = await Promise.all([
+    User.findById(claims.userId).select("title firstName lastName email roles organizationId").lean(),
+    claims.organizationId ? Organization.findById(claims.organizationId).select("name image").lean() : null
   ]);
 
-  if (!user) return { user: null, agency: null };
+  if (!user) return { user: null, organization: null };
 
   const firstName = user.firstName || "";
   const lastName  = user.lastName  || "";
@@ -33,14 +33,14 @@ export async function loader({ request }) {
       initials: `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase() || "U",
       email:    user.email,
       roles:    user.roles || [],
-      agencyId: claims.agencyId,
+      organizationId: claims.organizationId,
     },
-    agency
+    organization
   };
 }
 
 export default function Layout() {
-  const { user, agency } = useLoaderData() || { user: null, agency: null };
+  const { user, organization } = useLoaderData() || { user: null, organization: null };
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -55,7 +55,7 @@ export default function Layout() {
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
         user={user}
-        agency={agency}
+        organization={organization}
       />
 
       {/* Top bar */}
@@ -63,7 +63,7 @@ export default function Layout() {
         sidebarCollapsed={collapsed}
         onMobileMenuToggle={() => setMobileOpen((v) => !v)}
         user={user}
-        agency={agency}
+        organization={organization}
       />
 
       {/* Main content — shifts on desktop, full width on mobile */}

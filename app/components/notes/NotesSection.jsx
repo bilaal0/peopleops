@@ -54,9 +54,9 @@ function NoteCard({ note, currentUserId, currentUserRole, onDelete }) {
     ? `${note.addedBy.firstName?.[0] ?? ""}${note.addedBy.lastName?.[0] ?? ""}`.toUpperCase()
     : "?";
 
-  // Spec: show Delete if own note OR currentUserRole === 'agency_admin'
+  // Spec: show Delete if own note OR currentUserRole === 'organization_admin'
   const isOwn = note.addedBy && currentUserId === note.addedBy._id;
-  const isAdmin = currentUserRole === "agency_admin" || currentUserRole === "AGENCY_ADMIN" || currentUserRole === "SUPER_ADMIN";
+  const isAdmin = currentUserRole === "organization_admin" || currentUserRole === "ORGANIZATION_ADMIN" || currentUserRole === "SUPER_ADMIN";
   const canDelete = !note.isSystem && (isOwn || isAdmin);
 
   // useFetcher + useEffect — remove from list once server confirms hard delete

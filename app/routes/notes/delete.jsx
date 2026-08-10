@@ -21,8 +21,8 @@ export async function action({ request }) {
   try {
     await connect();
 
-    // Fetch note — agency scoped
-    const note = await Note.findOne({ _id: noteId, agencyId: user.agencyId });
+    // Fetch note — organization scoped
+    const note = await Note.findOne({ _id: noteId, organizationId: user.organizationId });
     if (!note) {
       return jsonResponse({ error: "Note not found" }, 404);
     }
@@ -31,16 +31,16 @@ export async function action({ request }) {
       return jsonResponse({ error: "System events cannot be deleted" }, 403);
     }
 
-    // Permission check: own note or agency admin
+    // Permission check: own note or organization admin
     const isOwn = note.addedBy.toString() === user.userId;
-    const isAdmin = user.roles?.includes("AGENCY_ADMIN") || user.roles?.includes("SUPER_ADMIN");
+    const isAdmin = user.roles?.includes("ORGANIZATION_ADMIN") || user.roles?.includes("SUPER_ADMIN");
 
     if (!isOwn && !isAdmin) {
       return jsonResponse({ error: "Forbidden" }, 403);
     }
 
     // Hard delete — spec requires this
-    await Note.deleteOne({ _id: noteId, agencyId: user.agencyId });
+    await Note.deleteOne({ _id: noteId, organizationId: user.organizationId });
     return jsonResponse({ success: true });
   } catch (err) {
     console.error("Error deleting note:", err);

@@ -2,7 +2,7 @@
 // GET /documents/s3-download?key=...
 // Directly streams an S3 object based on its key, bypassing the Document model.
 // This is used for entities that store S3 keys directly on their schema (e.g. Property.mainImage).
-// Security: Ensures the S3 key starts with the user's agencyId (unless SUPER_ADMIN).
+// Security: Ensures the S3 key starts with the user's organizationId (unless SUPER_ADMIN).
 
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { getPresignedUrl } from "../../utils/s3.server.js";
@@ -21,11 +21,11 @@ export async function loader({ request }) {
     return new Response("Missing S3 key", { status: 400 });
   }
 
-  // Security: agency isolation checks
-  // Allow if SUPER_ADMIN, or if key belongs to user's agency, or if it's an agency logo key
-  const isAgencyLogo = s3Key.includes("/agency/") || s3Key.includes("/logo/");
-  if (!user.roles?.includes("SUPER_ADMIN") && !isAgencyLogo) {
-    if (!s3Key.startsWith(user.agencyId + "/")) {
+  // Security: organization isolation checks
+  // Allow if SUPER_ADMIN, or if key belongs to user's organization, or if it's an organization logo key
+  const isOrganizationLogo = s3Key.includes("/organization/") || s3Key.includes("/logo/");
+  if (!user.roles?.includes("SUPER_ADMIN") && !isOrganizationLogo) {
+    if (!s3Key.startsWith(user.organizationId + "/")) {
       return new Response("Unauthorized access to this file.", { status: 403 });
     }
   }

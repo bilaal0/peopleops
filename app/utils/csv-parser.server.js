@@ -3,7 +3,7 @@
 // Supports Santander, Lloyds, Barclays, and HSBC.
 //
 // Rules (from Section 10):
-// - Strict agency isolation in matching queries
+// - Strict organization isolation in matching queries
 // - Rounding to 2dp
 // - Two-step flow
 
@@ -145,13 +145,13 @@ function parseCsvDate(val) {
 }
 
 // Reconcile and suggest matches in DB
-// Strictly isolates queries by agencyId
-export async function suggestMatchesForTransactions(transactions, agencyId) {
+// Strictly isolates queries by organizationId
+export async function suggestMatchesForTransactions(transactions, organizationId) {
   const suggestions = [];
 
   // Load active outstanding Rent Payments
   const outstandingRent = await RentPayment.find({
-    agencyId,
+    organizationId,
     status: { $in: ["pending", "overdue", "due", "partial"] },
     deleted: false
   })
@@ -188,7 +188,7 @@ export async function suggestMatchesForTransactions(transactions, agencyId) {
         matchScore = 30;
       } else {
         matchType = "expense";
-        details = "Agency Operating Expense";
+        details = "Organization Operating Expense";
         matchScore = 30;
       }
     }

@@ -7,10 +7,10 @@ const { Schema } = mongoose;
 
 const documentSchema = new Schema(
   {
-    // ── AGENCY SCOPE ──────────────────────────────────────────────────────────
-    agencyId: {
+    // ── ORGANIZATION SCOPE ──────────────────────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: false,
       index: true,
       default: null,
@@ -23,7 +23,7 @@ const documentSchema = new Schema(
       type: String,
       enum: ["landlord", "property", "tenant", "tenancy", "expense", "disbursement", "maintenance_job", "general", "staff", "client"],
       required: true,
-      // expense:         receipt/invoice for an AgencyExpense record
+      // expense:         receipt/invoice for an OrganizationExpense record
       // disbursement:    attachment for a Disbursement record
       // maintenance_job: photo, quote, invoice for a MaintenanceJob
     },
@@ -117,11 +117,11 @@ const documentSchema = new Schema(
 );
 
 // ── INDEXES ───────────────────────────────────────────────────────────────────
-documentSchema.index({ agencyId: 1, entityType: 1, entityId: 1 });
-documentSchema.index({ agencyId: 1, docType: 1 });
+documentSchema.index({ organizationId: 1, entityType: 1, entityId: 1 });
+documentSchema.index({ organizationId: 1, docType: 1 });
 documentSchema.index({ expiryDate: 1 }); // for expiry alert cron jobs
 documentSchema.index({
-  agencyId: 1,
+  organizationId: 1,
   entityType: 1,
   entityId: 1,
   relatedId: 1,

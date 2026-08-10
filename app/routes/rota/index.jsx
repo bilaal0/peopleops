@@ -19,8 +19,8 @@ export async function loader({ request }) {
     roles: { $in: ["EMPLOYEE", "REGISTERED_MANAGER", "ADMIN", "SUPER_ADMIN"] },
     deleted: false,
   };
-  if (!isSuperAdmin && currentUser.agencyId) {
-    staffQuery.agencyId = currentUser.agencyId;
+  if (!isSuperAdmin && currentUser.organizationId) {
+    staffQuery.organizationId = currentUser.organizationId;
   }
 
   // Client users — same query as user-accounts/client/index
@@ -28,14 +28,14 @@ export async function loader({ request }) {
     roles: "CLIENT",
     deleted: false,
   };
-  if (!isSuperAdmin && currentUser.agencyId) {
-    clientQuery.agencyId = currentUser.agencyId;
+  if (!isSuperAdmin && currentUser.organizationId) {
+    clientQuery.organizationId = currentUser.organizationId;
   }
 
-  // Rota events scoped to agency
+  // Rota events scoped to organization
   const rotaFilter = { deleted: false };
-  if (!isSuperAdmin && currentUser.agencyId) {
-    rotaFilter.agencyId = currentUser.agencyId;
+  if (!isSuperAdmin && currentUser.organizationId) {
+    rotaFilter.organizationId = currentUser.organizationId;
   }
 
   const [staffList, clientList, rotaEvents] = await Promise.all([
@@ -207,7 +207,7 @@ export async function action({ request }) {
           repeatCount: 0,
           employee: employeeId, employeeName,
           assignedTo: assignedToId || undefined, assignedToName,
-          agencyId: currentUser.agencyId || null,
+          organizationId: currentUser.organizationId || null,
           addedBy: currentUser.userId,
           color: "#1e3a5f",
         });
@@ -237,7 +237,7 @@ export async function action({ request }) {
       repeatCount: i === 0 ? repeatCount : 0,
       employee: employeeId, employeeName,
       assignedTo: assignedToId || undefined, assignedToName,
-      agencyId: currentUser.agencyId || null,
+      organizationId: currentUser.organizationId || null,
       addedBy: currentUser.userId,
       color: "#1e3a5f",
     });

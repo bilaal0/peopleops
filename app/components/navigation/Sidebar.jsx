@@ -12,9 +12,9 @@ import {
   CalendarDays,
   FileText,
 } from "lucide-react";
-import { getAgencyLogoUrl } from "../../utils/agencyLogo.js";
+import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 
-export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, user, agency }) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, user, organization }) {
   const location = useLocation();
   const [openSections, setOpenSections] = useState({});
   const isSuperAdmin = user?.roles?.includes("SUPER_ADMIN");
@@ -32,7 +32,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-    ...(isSuperAdmin ? [{ name: "Organizations", href: "/organizations", icon: Building2 }] : []),
+    ...(isSuperAdmin ? [{ name: "Organization", href: "/organizations", icon: Building2 }] : []),
     {
       name: "User Accounts",
       icon: Users,
@@ -159,20 +159,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         <div className="space-y-3 border-t border-[#E2E8F0] bg-slate-50/70 px-4 py-4">
           {!collapsed && (
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 flex items-center gap-2.5">
-              {getAgencyLogoUrl(agency?.image) ? (
+              {getOrganizationLogoUrl(organization?.image) ? (
                 <img
-                  src={getAgencyLogoUrl(agency.image)}
-                  alt={agency?.name || "Agency Logo"}
+                  src={getOrganizationLogoUrl(organization.image)}
+                  alt={organization?.name || "Organization Logo"}
                   className="w-7 h-7 rounded-md object-cover border border-slate-200 bg-white shrink-0"
                 />
               ) : (
                 <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-100">
-                  {agency?.name?.charAt(0)?.toUpperCase() || "A"}
+                  {organization?.name?.charAt(0)?.toUpperCase() || "A"}
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Organization</p>
-                <p className="mt-0.5 truncate text-xs font-bold text-[#1E293B]">{agency?.name || "Main Branch"}</p>
+                <p className="mt-0.5 truncate text-xs font-bold text-[#1E293B]">{organization?.name || "Main Branch"}</p>
               </div>
             </div>
           )}
@@ -222,7 +222,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <div className="space-y-3 border-t border-[#E2E8F0] bg-slate-50/70 px-4 py-4">
               <div className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Organization</p>
-                <p className="mt-1 truncate text-xs font-bold text-[#1E293B]">{agency?.name || "Main Branch"}</p>
+                <p className="mt-1 truncate text-xs font-bold text-[#1E293B]">{organization?.name || "Main Branch"}</p>
               </div>
 
               <Form method="post" action="/logout">

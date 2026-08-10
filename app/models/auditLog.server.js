@@ -8,9 +8,9 @@ const { Schema } = mongoose;
 
 const auditLogSchema = new Schema(
   {
-    agencyId: {
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },

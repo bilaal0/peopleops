@@ -13,7 +13,7 @@ export async function loader({ request, params }) {
   await connect();
   const obligation = await Obligation.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   })
     .populate("obligationTypeId", "name legislation fineDescription fineMaxGbp stage")
     .populate("tenancyId", "startDate rentPcm propertyId")
@@ -38,7 +38,7 @@ export async function action({ request, params }) {
   await logObligation({
     obligationId: params.id,
     userId: user.userId,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     tenancyId: null, // populated from obligation
     declarationText,
     ipAddress,

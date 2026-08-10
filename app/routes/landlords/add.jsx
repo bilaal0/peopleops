@@ -19,14 +19,14 @@ import { logAMLResult, logLandlordAdded } from "../../utils/activityLog.server.j
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
   return {};
 }
 
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   const formData = await request.formData();
   const v = Object.fromEntries(formData);
@@ -81,7 +81,7 @@ export async function action({ request }) {
       addressLine3: v.addressLine3?.trim() || undefined,
       postTown: v.postTown?.trim() || undefined,
       postcode: v.postcode?.trim() || undefined,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       roles: ["LANDLORD"],
       status: 0, // Inactive — cannot login
       addedBy: user.userId,
@@ -110,7 +110,7 @@ export async function action({ request }) {
 
     // ── Step 2: Handle S3 Upload if file present ───────────────────────────
     if (file && file.size > 0) {
-      const s3Key = buildS3Key(user.agencyId, "landlord", landlordUser._id.toString(), "aml_report", file.name);
+      const s3Key = buildS3Key(user.organizationId, "landlord", landlordUser._id.toString(), "aml_report", file.name);
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       await uploadToS3(buffer, s3Key, file.type);

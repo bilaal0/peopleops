@@ -37,7 +37,7 @@ export function generatePaymentPeriods(tenancy, property, count = 3) {
     );
 
     payments.push({
-      agencyId:          tenancy.agencyId,
+      organizationId:          tenancy.organizationId,
       tenancyId:         tenancy._id,
       propertyId:        tenancy.propertyId,
       landlordId:        tenancy.landlordId,
@@ -89,7 +89,7 @@ export function calculateCommission(amountPaid, property) {
   // Round to 2 decimal places
   commissionAmount = Math.round(commissionAmount * 100) / 100;
 
-  // VAT on commission (20%) only if agency is VAT registered
+  // VAT on commission (20%) only if organization is VAT registered
   const vatAmount = commission.vatRegistered
     ? Math.round(commissionAmount * 0.20 * 100) / 100
     : 0;

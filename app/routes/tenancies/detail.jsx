@@ -23,18 +23,18 @@ import { logSection8Created, logSection13Created, logTenancyEnded, logHowToRentS
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
 
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN")
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN")
     ? {}
-    : { agencyId: user.agencyId };
+    : { organizationId: user.organizationId };
 
   // 1. Fetch tenancy with full population
   const tenancy = await Tenancy.findOne({
     _id: params.id,
-    ...agencyFilter,
+    ...organizationFilter,
     deleted: false,
   })
     .populate('propertyId',
@@ -53,7 +53,7 @@ export async function loader({ request, params }) {
     Document.find({
       entityType: 'tenancy',
       entityId: params.id,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
     })
       .populate('docType', 'name')
       .populate('uploadedBy', 'title firstName lastName')
@@ -71,7 +71,7 @@ export async function loader({ request, params }) {
   // 4. Always fetch a minimal set of rent payments for the compliance strip
   const rentPaymentsForStrip = await RentPayment.find({
     tenancyId: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: false,
   })
     .sort({ periodStart: -1 })
@@ -83,15 +83,15 @@ export async function loader({ request, params }) {
   // 5. Full rent tab data — only when on the rent tab
   let rentData = null;
   if (activeTab === 'rent') {
-    rentData = await loadRentTabData(params.id, user.agencyId, tenancy);
+    rentData = await loadRentTabData(params.id, user.organizationId, tenancy);
   }
 
   // 6. Fetch notes only when the timeline tab is open
   const notesResult = activeTab === "timeline"
-    ? await getNotesForEntity('tenancy', params.id, user.agencyId, 1)
+    ? await getNotesForEntity('tenancy', params.id, user.organizationId, 1)
     : { notes: [], hasMore: false, total: 0, page: 1 };
 
-  const isAdmin = !!user.agencyId || user.roles?.includes("SUPER_ADMIN");
+  const isAdmin = !!user.organizationId || user.roles?.includes("SUPER_ADMIN");
 
   return {
     tenancyId: params.id,
@@ -129,13 +129,13 @@ export async function loader({ request, params }) {
 }
 
 // ── Rent tab data loader (only runs when tab=rent) ────────────────────────────
-async function loadRentTabData(tenancyId, agencyId, tenancy) {
+async function loadRentTabData(tenancyId, organizationId, tenancy) {
   const today = new Date();
   const currentYear = today.getFullYear();
   const { Types } = await import("mongoose");
 
   const [rentPayments, ytdAgg] = await Promise.all([
-    RentPayment.find({ tenancyId, agencyId, deleted: false })
+    RentPayment.find({ tenancyId, organizationId, deleted: false })
       .populate('recordedBy', 'title firstName lastName')
       .sort({ periodStart: -1 })
       .limit(24)
@@ -145,7 +145,7 @@ async function loadRentTabData(tenancyId, agencyId, tenancy) {
       {
         $match: {
           tenancyId: new Types.ObjectId(tenancyId),
-          agencyId: new Types.ObjectId(agencyId),
+          organizationId: new Types.ObjectId(organizationId),
           deleted: false,
           status: { $in: ['paid', 'partial'] },
           periodStart: { $gte: new Date(currentYear, 0, 1), $lte: new Date(currentYear, 11, 31) },
@@ -195,20 +195,20 @@ async function loadRentTabData(tenancyId, agencyId, tenancy) {
 export async function action({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
 
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN")
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN")
     ? {}
-    : { agencyId: user.agencyId };
+    : { organizationId: user.organizationId };
 
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   const tenancy = await Tenancy.findOne({
     _id: params.id,
-    ...agencyFilter,
+    ...organizationFilter,
     deleted: false,
   });
 
@@ -238,7 +238,7 @@ export async function action({ request, params }) {
   if (intent === "record-section8") {
     const rentPayments = await RentPayment.find({
       tenancyId: params.id,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: false,
     })
       .sort({ periodStart: -1 })
@@ -381,7 +381,7 @@ export async function action({ request, params }) {
     if (!paymentId) return data({ error: "Missing payment ID." }, { status: 400 });
     if (!amountPaid || amountPaid <= 0) return data({ error: "Amount must be greater than 0." }, { status: 400 });
 
-    const payment = await RentPayment.findOne({ _id: paymentId, agencyId: user.agencyId });
+    const payment = await RentPayment.findOne({ _id: paymentId, organizationId: user.organizationId });
     if (!payment) return data({ error: "Payment record not found." }, { status: 404 });
     if (['paid', 'waived'].includes(payment.status)) return data({ error: "Payment is already recorded." }, { status: 400 });
     if (amountPaid > payment.amountDue) return data({ error: `Amount cannot exceed rent due of £${payment.amountDue}.` }, { status: 400 });
@@ -412,14 +412,14 @@ export async function action({ request, params }) {
 
   if (intent === "waive-rent-payment") {
     // Admin only
-    if (!user.roles?.includes("SUPER_ADMIN") && user.roles?.[0] !== "agency_admin") {
+    if (!user.roles?.includes("SUPER_ADMIN") && user.roles?.[0] !== "organization_admin") {
       return data({ error: "Only admins can waive payments." }, { status: 403 });
     }
     const paymentId = formData.get("paymentId");
     const waivedReason = formData.get("waivedReason")?.toString().trim();
     if (!paymentId || !waivedReason) return data({ error: "Payment ID and reason are required." }, { status: 400 });
 
-    const payment = await RentPayment.findOne({ _id: paymentId, agencyId: user.agencyId });
+    const payment = await RentPayment.findOne({ _id: paymentId, organizationId: user.organizationId });
     if (!payment) return data({ error: "Payment not found." }, { status: 404 });
     if (['paid', 'waived'].includes(payment.status)) return data({ error: "Payment cannot be waived." }, { status: 400 });
 
@@ -435,7 +435,7 @@ export async function action({ request, params }) {
   }
 
   if (intent === "generate-rent-payments") {
-    const count = await RentPayment.countDocuments({ tenancyId: tenancy._id, agencyId: user.agencyId });
+    const count = await RentPayment.countDocuments({ tenancyId: tenancy._id, organizationId: user.organizationId });
     if (count > 0) return data({ error: "Payment records already exist for this tenancy." }, { status: 400 });
 
     const { Property } = await import("../../models/property.server.js");
@@ -1807,7 +1807,7 @@ function RentTab({ tenancy, tenancyId, rentData, isAdmin, currentUserRole }) {
   const commission = tenancy.propertyId?.commission || null;
   const fmt = (n) => `£${Number(n || 0).toLocaleString("en-GB", { minimumFractionDigits: 2 })}`;
 
-  const canWaive = isAdmin || currentUserRole === 'agency_admin';
+  const canWaive = isAdmin || currentUserRole === 'organization_admin';
 
   return (
     <div className="space-y-5">

@@ -24,12 +24,12 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
   const contractors = await Contractor.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: false,
   })
     .sort({ isPreferred: -1, name: 1 })
@@ -40,7 +40,7 @@ export async function loader({ request }) {
   const jobCounts = await MaintenanceJob.aggregate([
     {
       $match: {
-        agencyId: user.agencyId,
+        organizationId: user.organizationId,
         contractorId: { $in: contractorIds },
         deleted: false,
       },

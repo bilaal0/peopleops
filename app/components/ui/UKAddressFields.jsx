@@ -65,17 +65,46 @@ export default function UKAddressFields({
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState("");
 
-  // Sync state if values prop changes (e.g. async form load)
+  // Sync state if values prop actually changes (e.g. async form load)
   useEffect(() => {
-    setAddressLine1(getValue("addressLine1"));
-    setAddressLine2(getValue("addressLine2"));
-    setAddressLine3(getValue("addressLine3"));
-    setCity(getValue("city", ["postTown"]) || defaultCity);
-    setCounty(getValue("county"));
-    setPostcode(getValue("postcode"));
-    setCountry(getValue("country") || "England");
-    setUprn(getValue("uprn"));
-  }, [values, defaultCity]);
+    const valPostcode = getValue("postcode");
+    const valAddressLine1 = getValue("addressLine1");
+    const valAddressLine2 = getValue("addressLine2");
+    const valAddressLine3 = getValue("addressLine3");
+    const valCity = getValue("city", ["postTown"]) || defaultCity;
+    const valCounty = getValue("county");
+    const valCountry = getValue("country") || "England";
+    const valUprn = getValue("uprn");
+
+    if (valPostcode) setPostcode(valPostcode);
+    if (valAddressLine1) setAddressLine1(valAddressLine1);
+    if (valAddressLine2) setAddressLine2(valAddressLine2);
+    if (valAddressLine3) setAddressLine3(valAddressLine3);
+    if (valCity) setCity(valCity);
+    if (valCounty) setCounty(valCounty);
+    if (valCountry) setCountry(valCountry);
+    if (valUprn) setUprn(valUprn);
+  }, [
+    values[names.postcode],
+    values[names.addressLine1],
+    values[names.addressLine2],
+    values[names.addressLine3],
+    values[names.city],
+    values[names.postTown],
+    values[names.county],
+    values[names.country],
+    values[names.uprn],
+    values.postcode,
+    values.addressLine1,
+    values.addressLine2,
+    values.addressLine3,
+    values.city,
+    values.postTown,
+    values.county,
+    values.country,
+    values.uprn,
+    defaultCity
+  ]);
 
   const handlePostcodeLookup = async () => {
     setLookupError("");

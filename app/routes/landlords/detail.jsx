@@ -16,15 +16,15 @@ import Timeline from "../../components/timeline/Timeline.jsx";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
 
   const isSuperAdmin = user.roles?.includes("SUPER_ADMIN");
-  const agencyFilter = isSuperAdmin ? {} : { agencyId: user.agencyId };
+  const organizationFilter = isSuperAdmin ? {} : { organizationId: user.organizationId };
 
   // Load landlord from User collection
-  const profile = await User.findOne({ _id: params.id, roles: "LANDLORD", ...agencyFilter })
+  const profile = await User.findOne({ _id: params.id, roles: "LANDLORD", ...organizationFilter })
     .populate("landlordData.amlCheckedBy", "title firstName lastName")
     .lean();
 
@@ -36,11 +36,11 @@ export async function loader({ request, params }) {
   const fullUser = await User.findById(user.userId).lean();
 
   const [tenancies, documents, activeDocTypes, notesResult] = await Promise.all([
-    Tenancy.find({ landlordId: landlordUserId, deleted: false, ...agencyFilter })
+    Tenancy.find({ landlordId: landlordUserId, deleted: false, ...organizationFilter })
       .populate("propertyId", "addressLine1 addressLine2 city postcode")
       .sort({ createdAt: -1 })
       .lean(),
-    Document.find({ entityId: landlordUserId, entityType: "landlord", deleted: false, ...agencyFilter })
+    Document.find({ entityId: landlordUserId, entityType: "landlord", deleted: false, ...organizationFilter })
       .populate("docType", "name")
       .populate("uploadedBy", "title firstName lastName")
       .sort({ createdAt: -1 })
@@ -48,16 +48,16 @@ export async function loader({ request, params }) {
     DocumentType.find({ isActive: true, entity: "landlord" })
       .sort({ name: 1 })
       .lean(),
-    getNotesForEntity("landlord", params.id, user.agencyId, 1)
+    getNotesForEntity("landlord", params.id, user.organizationId, 1)
   ]);
 
-  const isAdmin = !!user.agencyId || user.roles?.includes("SUPER_ADMIN");
+  const isAdmin = !!user.organizationId || user.roles?.includes("SUPER_ADMIN");
 
   // Merge User identity + Profile domain data into a flat "landlord" object for the UI
   const landlord = {
     _id: profile._id.toString(),
     userId: landlordUserId?.toString() || null,
-    agencyId: profile.agencyId?.toString() || null,
+    organizationId: profile.organizationId?.toString() || null,
     // Identity from User
     firstName: profile.firstName || "",
     lastName: profile.lastName || "",
@@ -99,7 +99,7 @@ export async function loader({ request, params }) {
     ...d,
     _id:        d._id.toString(),
     entityId:   d.entityId?.toString() || null,
-    agencyId:   d.agencyId?.toString() || null,
+    organizationId:   d.organizationId?.toString() || null,
     uploadedBy: d.uploadedBy
       ? { ...d.uploadedBy, _id: d.uploadedBy._id.toString() }
       : null,

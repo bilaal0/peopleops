@@ -1,10 +1,10 @@
 // routes/transactions/index.jsx
-// Agency Financial Profit & Loss / Transactions Overview Page.
+// Organization Financial Profit & Loss / Transactions Overview Page.
 // Shows monthly summaries, 6-month SVG charts, expenses log, disbursements log,
 // and inline expense adding.
 //
 // Rules (from Section 10):
-// - Strict agency isolation enforced
+// - Strict organization isolation enforced
 // - Rounding to 2dp
 // - Soft delete only
 // - Custom SVG visual elements to bypass Recharts issues
@@ -14,11 +14,11 @@ import { Link, useLoaderData, useActionData, useSubmit, useNavigation, useSearch
 import { redirect } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";
-import { AgencyExpense } from "../../models/agencyExpense.server.js";
+import { OrganizationExpense } from "../../models/organizationExpense.server.js";
 import { Disbursement } from "../../models/disbursement.server.js";
 import { Property } from "../../models/property.server.js";
 import { RentPayment } from "../../models/rentPayment.server.js";
-import { getAgencyFinancialSummary, getLast6MonthsSummary } from "../../utils/transactions.server.js";
+import { getOrganizationFinancialSummary, getLast6MonthsSummary } from "../../utils/transactions.server.js";
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -39,10 +39,10 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
 
   // Month navigation
   const url = new URL(request.url);
@@ -54,14 +54,14 @@ export async function loader({ request }) {
   const periodEnd = new Date(year, month, 0, 23, 59, 59, 999);
 
   // 1. Fetch current month's financial metrics
-  const summary = await getAgencyFinancialSummary(agencyId, year, month);
+  const summary = await getOrganizationFinancialSummary(organizationId, year, month);
 
   // 2. Fetch last 6 months trend
-  const trend = await getLast6MonthsSummary(agencyId);
+  const trend = await getLast6MonthsSummary(organizationId);
 
   // 3. Fetch Disbursements paid/pending in this month
   const disbursements = await Disbursement.find({
-    agencyId,
+    organizationId,
     deleted: false,
     $or: [
       { paidDate: { $gte: periodStart, $lte: periodEnd } },
@@ -72,9 +72,9 @@ export async function loader({ request }) {
     .sort({ createdAt: -1 })
     .lean();
 
-  // 4. Fetch Agency Expenses in this month
-  const expenses = await AgencyExpense.find({
-    agencyId,
+  // 4. Fetch Organization Expenses in this month
+  const expenses = await OrganizationExpense.find({
+    organizationId,
     date: { $gte: periodStart, $lte: periodEnd },
     deleted: false
   })
@@ -83,11 +83,11 @@ export async function loader({ request }) {
     .lean();
 
   // 5. Fetch properties for expense linking dropdown
-  const properties = await Property.find({ agencyId, deleted: false }).select("addressLine1").lean();
+  const properties = await Property.find({ organizationId, deleted: false }).select("addressLine1").lean();
 
   // 6. Fetch Rent Payments for commission breakdown
   const payments = await RentPayment.find({
-    agencyId,
+    organizationId,
     deleted: false,
     periodStart: { $gte: periodStart, $lte: periodEnd }
   })
@@ -146,7 +146,7 @@ export async function action({ request }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -167,8 +167,8 @@ export async function action({ request }) {
       return { success: false, error: "Category, description, positive amount and date are required." };
     }
 
-    await AgencyExpense.create({
-      agencyId,
+    await OrganizationExpense.create({
+      organizationId,
       category,
       description,
       amount,
@@ -181,13 +181,13 @@ export async function action({ request }) {
       createdBy: user.userId
     });
 
-    return { success: true, message: "Agency expense successfully logged." };
+    return { success: true, message: "Organization expense successfully logged." };
   }
 
   if (intent === "delete-expense") {
     const expenseId = formData.get("expenseId");
     
-    const expense = await AgencyExpense.findOne({ _id: expenseId, agencyId });
+    const expense = await OrganizationExpense.findOne({ _id: expenseId, organizationId });
     if (!expense) return { success: false, error: "Expense not found." };
 
     expense.deleted = true;
@@ -267,7 +267,7 @@ export default function TransactionsOverview() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-5">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-[#1E293B]">Transactions & Profit & Loss</h1>
-          <p className="text-xs text-[#94A3B8] font-medium">Analyze agency commission revenue streams, operating costs, and landlord payments.</p>
+          <p className="text-xs text-[#94A3B8] font-medium">Analyze organization commission revenue streams, operating costs, and landlord payments.</p>
         </div>
 
         <div className="flex items-center flex-wrap gap-2.5">
@@ -294,7 +294,7 @@ export default function TransactionsOverview() {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 text-white text-xs font-semibold rounded-lg hover:bg-black transition shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
-            Log Agency Expense
+            Log Organization Expense
           </button>
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function TransactionsOverview() {
         </div>
 
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Agency Commission Earned</p>
+          <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Organization Commission Earned</p>
           <p className="text-xl font-extrabold text-[#16A34A] mt-1 tracking-tight">{formatCurrency(summary.rent.totalCommission)}</p>
           <div className="absolute top-4 right-4 bg-emerald-50 p-1.5 rounded-lg border border-emerald-100">
             <TrendingUp className="w-4 h-4 text-[#16A34A]" />
@@ -318,7 +318,7 @@ export default function TransactionsOverview() {
         </div>
 
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Agency Expenses Incurred</p>
+          <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Organization Expenses Incurred</p>
           <p className="text-xl font-extrabold text-red-600 mt-1 tracking-tight">{formatCurrency(summary.expenses.total)}</p>
           <div className="absolute top-4 right-4 bg-red-50 p-1.5 rounded-lg border border-red-100">
             <Tag className="w-4 h-4 text-red-600" />
@@ -326,9 +326,9 @@ export default function TransactionsOverview() {
         </div>
 
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Agency Net Profit</p>
-          <p className={`text-xl font-extrabold mt-1 tracking-tight ${summary.agencyNetIncome >= 0 ? "text-[#2563EB]" : "text-red-700"}`}>
-            {formatCurrency(summary.agencyNetIncome)}
+          <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Organization Net Profit</p>
+          <p className={`text-xl font-extrabold mt-1 tracking-tight ${summary.organizationNetIncome >= 0 ? "text-[#2563EB]" : "text-red-700"}`}>
+            {formatCurrency(summary.organizationNetIncome)}
           </p>
           <div className="absolute top-4 right-4 bg-blue-50 p-1.5 rounded-lg border border-blue-100">
             <PoundSterling className="w-4 h-4 text-[#2563EB]" />
@@ -414,7 +414,7 @@ export default function TransactionsOverview() {
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm space-y-4">
           <div>
             <h3 className="text-xs font-bold text-[#1E293B] uppercase tracking-wider">Expense Categories Breakdown</h3>
-            <p className="text-[10px] text-[#94A3B8] font-medium">Top agency operating cost distributions.</p>
+            <p className="text-[10px] text-[#94A3B8] font-medium">Top organization operating cost distributions.</p>
           </div>
 
           <div className="space-y-3.5 max-h-56 overflow-y-auto">
@@ -484,10 +484,10 @@ export default function TransactionsOverview() {
         </div>
       </div>
 
-      {/* ── AGENCY EXPENSES TABLE ── */}
+      {/* ── ORGANIZATION EXPENSES TABLE ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-[#E2E8F0] flex justify-between items-center">
-          <h3 className="text-xs font-bold text-[#1E293B] uppercase tracking-widest">Agency Operating Expenses Log</h3>
+          <h3 className="text-xs font-bold text-[#1E293B] uppercase tracking-widest">Organization Operating Expenses Log</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
@@ -508,7 +508,7 @@ export default function TransactionsOverview() {
               {expenses.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="p-8 text-center text-xs text-[#94A3B8]">
-                    No agency expenses recorded for this month.
+                    No organization expenses recorded for this month.
                   </td>
                 </tr>
               ) : (
@@ -613,13 +613,13 @@ export default function TransactionsOverview() {
         </div>
       </div>
 
-      {/* ── MODAL: LOG AGENCY EXPENSE ── */}
+      {/* ── MODAL: LOG ORGANIZATION EXPENSE ── */}
       {isExpenseModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex justify-between items-center bg-slate-50 px-5 py-4 border-b border-[#E2E8F0]">
               <div>
-                <h3 className="text-sm font-bold text-[#1E293B]">Log Agency Operating Expense</h3>
+                <h3 className="text-sm font-bold text-[#1E293B]">Log Organization Operating Expense</h3>
                 <p className="text-[10px] text-[#94A3B8] font-medium mt-0.5">Log custom cost for P&L reporting.</p>
               </div>
               <button onClick={() => setIsExpenseModalOpen(false)} className="text-[#94A3B8] hover:text-[#1E293B]">

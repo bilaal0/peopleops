@@ -6,12 +6,12 @@ const { Schema } = mongoose;
 const propertySchema = new Schema(
   {
     // ============================================================
-    // AGENCY SCOPE
+    // ORGANIZATION SCOPE
     // ============================================================
 
-    agencyId: {
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -311,10 +311,10 @@ const propertySchema = new Schema(
 // INDEXES
 // ============================================================
 
-propertySchema.index({ agencyId: 1, status: 1 });
-propertySchema.index({ agencyId: 1, deleted: 1 });
-propertySchema.index({ landlordId: 1, agencyId: 1 });
-propertySchema.index({ agencyId: 1, epcRating: 1 });
+propertySchema.index({ organizationId: 1, status: 1 });
+propertySchema.index({ organizationId: 1, deleted: 1 });
+propertySchema.index({ landlordId: 1, organizationId: 1 });
+propertySchema.index({ organizationId: 1, epcRating: 1 });
 propertySchema.index({ postcode: 1 });
 propertySchema.index({ hmoLicenceExpiry: 1 });
 propertySchema.index({ selectiveLicenceExpiry: 1 });

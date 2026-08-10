@@ -32,13 +32,13 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
   // Fetch active schedules populated
   const schedules = await PlannedMaintenanceSchedule.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   })
     .populate("propertyId", "addressLine1 city postcode")
@@ -48,7 +48,7 @@ export async function loader({ request }) {
 
   // Fetch properties for addition selector
   const properties = await Property.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   })
     .select("addressLine1 city postcode landlordId")
@@ -57,7 +57,7 @@ export async function loader({ request }) {
 
   // Fetch contractors for addition selector
   const contractors = await Contractor.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     status: "active",
     deleted: false,
   })
@@ -80,7 +80,7 @@ export async function loader({ request }) {
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -102,7 +102,7 @@ export async function action({ request }) {
     const scheduleId = fd.get("scheduleId");
     const schedule = await PlannedMaintenanceSchedule.findOne({
       _id: scheduleId,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
     });
     if (schedule) {
       schedule.active = !schedule.active;
@@ -117,7 +117,7 @@ export async function action({ request }) {
   if (intent === "delete-schedule") {
     const scheduleId = fd.get("scheduleId");
     await PlannedMaintenanceSchedule.findOneAndUpdate(
-      { _id: scheduleId, agencyId: user.agencyId },
+      { _id: scheduleId, organizationId: user.organizationId },
       { deleted: true, deletedAt: new Date(), deletedBy: user.userId || user._id }
     );
     return { success: "Schedule successfully removed." };
@@ -151,7 +151,7 @@ export async function action({ request }) {
 
     const property = await Property.findOne({
       _id: propertyId,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
     }).lean();
 
     if (!property) {
@@ -164,7 +164,7 @@ export async function action({ request }) {
     const daysBeforeDue = isNaN(daysBeforeDueVal) ? 30 : daysBeforeDueVal;
 
     await PlannedMaintenanceSchedule.create({
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       propertyId,
       landlordId: property.landlordId.toString(),
       title,

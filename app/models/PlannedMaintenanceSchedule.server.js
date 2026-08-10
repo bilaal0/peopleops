@@ -9,10 +9,10 @@ const { Schema } = mongoose;
 
 const plannedMaintenanceSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -147,10 +147,10 @@ const plannedMaintenanceSchema = new Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-plannedMaintenanceSchema.index({ agencyId: 1, propertyId: 1 });
-plannedMaintenanceSchema.index({ agencyId: 1, nextDueDate: 1 });
-plannedMaintenanceSchema.index({ agencyId: 1, active: 1 });
-plannedMaintenanceSchema.index({ agencyId: 1, deleted: 1 });
+plannedMaintenanceSchema.index({ organizationId: 1, propertyId: 1 });
+plannedMaintenanceSchema.index({ organizationId: 1, nextDueDate: 1 });
+plannedMaintenanceSchema.index({ organizationId: 1, active: 1 });
+plannedMaintenanceSchema.index({ organizationId: 1, deleted: 1 });
 
 export const PlannedMaintenanceSchedule =
   mongoose.models.PlannedMaintenanceSchedule ||

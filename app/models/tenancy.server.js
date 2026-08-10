@@ -5,10 +5,10 @@ const { Schema } = mongoose;
 
 const tenancySchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -308,13 +308,13 @@ const tenancySchema = new Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-tenancySchema.index({ agencyId: 1, status: 1 });
-tenancySchema.index({ agencyId: 1, propertyId: 1 });
-tenancySchema.index({ agencyId: 1, landlordId: 1 });
-tenancySchema.index({ agencyId: 1, tenantIds: 1 });
-tenancySchema.index({ agencyId: 1, "rent.reviewDate": 1 });
-tenancySchema.index({ agencyId: 1, endDate: 1 });
-tenancySchema.index({ agencyId: 1, deleted: 1 });
+tenancySchema.index({ organizationId: 1, status: 1 });
+tenancySchema.index({ organizationId: 1, propertyId: 1 });
+tenancySchema.index({ organizationId: 1, landlordId: 1 });
+tenancySchema.index({ organizationId: 1, tenantIds: 1 });
+tenancySchema.index({ organizationId: 1, "rent.reviewDate": 1 });
+tenancySchema.index({ organizationId: 1, endDate: 1 });
+tenancySchema.index({ organizationId: 1, deleted: 1 });
 
 export const Tenancy =
   mongoose.models.Tenancy || mongoose.model("Tenancy", tenancySchema);

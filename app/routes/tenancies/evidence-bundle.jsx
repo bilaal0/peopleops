@@ -25,14 +25,14 @@ export async function action({ request, params }) {
 
   // params.id — consistent with all other tenancy routes
   const tenancyId = params.id;
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
 
   await connect();
 
-  // 1. Agency isolation — verify this tenancy belongs to this agency
+  // 1. Organization isolation — verify this tenancy belongs to this organization
   const tenancy = await Tenancy.findOne({
     _id: tenancyId,
-    agencyId,
+    organizationId,
     deleted: false,
   }).lean();
 
@@ -40,14 +40,14 @@ export async function action({ request, params }) {
     // IMPORTANT: return error in fetcher data — never throw a Response here.
     // throw new Response() would bubble out of the fetcher and trigger the
     // error boundary, showing the full-page 404. return keeps it in the fetcher.
-    console.error(`[EvidenceVault] Tenancy not found: ${tenancyId} for agency: ${agencyId}`);
+    console.error(`[EvidenceVault] Tenancy not found: ${tenancyId} for organization: ${organizationId}`);
     return { error: "Tenancy not found or access denied." };
   }
 
   // 2. Fetch all data needed for the bundle
   let bundleData;
   try {
-    bundleData = await fetchBundleData(tenancyId, agencyId);
+    bundleData = await fetchBundleData(tenancyId, organizationId);
   } catch (err) {
     console.error("[EvidenceVault] Data fetch failed:", err);
     return { error: "Failed to load tenancy data. Please try again." };
@@ -70,7 +70,7 @@ export async function action({ request, params }) {
   // 5. Upload to S3, receive a 1-hour presigned download URL
   let downloadUrl;
   try {
-    ({ downloadUrl } = await uploadBundleToS3(pdfBuffer, tenancyId, agencyId));
+    ({ downloadUrl } = await uploadBundleToS3(pdfBuffer, tenancyId, organizationId));
   } catch (err) {
     console.error("[EvidenceVault] S3 upload failed:", err);
     return { error: "Failed to save bundle. Please try again." };

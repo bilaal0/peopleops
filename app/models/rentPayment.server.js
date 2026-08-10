@@ -9,10 +9,10 @@ const { Schema } = mongoose;
 
 const rentPaymentSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -114,9 +114,9 @@ const rentPaymentSchema = new Schema(
     vatAmount: {
       type: Number,
       default: 0,
-      // VAT on commission if agency is VAT registered
+      // VAT on commission if organization is VAT registered
       // commissionAmount * 0.20
-      // 0 if agency not VAT registered
+      // 0 if organization not VAT registered
     },
     netToLandlord: {
       type: Number,
@@ -135,7 +135,7 @@ const rentPaymentSchema = new Schema(
         "paid",      // paid in full
         "partial",   // partially paid
         "overdue",   // past due date, not fully paid
-        "waived",    // agency has waived this payment
+        "waived",    // organization has waived this payment
       ],
       default: "pending",
       index: true,
@@ -147,7 +147,7 @@ const rentPaymentSchema = new Schema(
     // due      → partial  : when agent records partial (action)
     // overdue  → paid     : when agent marks as paid (action)
     // overdue  → partial  : when agent records partial (action)
-    // any      → waived   : agency_admin only (action)
+    // any      → waived   : organization_admin only (action)
 
     // ── Payment details ───────────────────────────────────────
     paymentMethod: {
@@ -194,7 +194,7 @@ const rentPaymentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
-      // agency staff member who marked payment as received
+      // organization staff member who marked payment as received
     },
     recordedAt: {
       type: Date,
@@ -246,26 +246,26 @@ const rentPaymentSchema = new Schema(
 
 // ── Indexes ───────────────────────────────────────────────────
 
-rentPaymentSchema.index({ agencyId: 1, tenancyId: 1 });
+rentPaymentSchema.index({ organizationId: 1, tenancyId: 1 });
 // primary query: all payments for a tenancy (rent tab)
 
-rentPaymentSchema.index({ agencyId: 1, status: 1 });
-// compliance dashboard: all overdue payments for agency
+rentPaymentSchema.index({ organizationId: 1, status: 1 });
+// compliance dashboard: all overdue payments for organization
 
-rentPaymentSchema.index({ agencyId: 1, dueDate: 1 });
+rentPaymentSchema.index({ organizationId: 1, dueDate: 1 });
 // cron job: find payments due today
 
-rentPaymentSchema.index({ agencyId: 1, landlordId: 1 });
+rentPaymentSchema.index({ organizationId: 1, landlordId: 1 });
 // landlord statement: all payments for a landlord
 
-rentPaymentSchema.index({ agencyId: 1, propertyId: 1 });
+rentPaymentSchema.index({ organizationId: 1, propertyId: 1 });
 // property level rent reporting
 
 rentPaymentSchema.index({ tenancyId: 1, periodStart: 1 });
 // check if a period already has a payment record
 // used by cron job to avoid duplicate generation
 
-rentPaymentSchema.index({ agencyId: 1, deleted: 1, status: 1 });
+rentPaymentSchema.index({ organizationId: 1, deleted: 1, status: 1 });
 // filtered queries excluding deleted records
 
 // ── Model export ──────────────────────────────────────────────

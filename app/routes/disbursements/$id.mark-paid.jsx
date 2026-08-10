@@ -2,7 +2,7 @@
 // POST action route to mark a pending disbursement as paid.
 //
 // Rules (from Section 10):
-// - Agency isolation: verified on disbursement query
+// - Organization isolation: verified on disbursement query
 // - Record audit fields: markedPaidBy
 
 import { redirect } from "react-router";
@@ -19,7 +19,7 @@ export async function action({ request, params }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const { id } = params;
 
   const formData = await request.formData();
@@ -27,7 +27,7 @@ export async function action({ request, params }) {
   const paymentMethod = formData.get("paymentMethod") || "bacs";
   const bankReference = formData.get("bankReference") || "";
 
-  const disbursement = await Disbursement.findOne({ _id: id, agencyId, deleted: false });
+  const disbursement = await Disbursement.findOne({ _id: id, organizationId, deleted: false });
   if (!disbursement) {
     return { success: false, error: "Disbursement not found." };
   }

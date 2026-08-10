@@ -1,18 +1,18 @@
-// models/agencyExpense.server.js
-// Records agency operating costs.
-// Not linked to tenancy or landlord — agency-wide P&L.
+// models/organizationExpense.server.js
+// Records organization operating costs.
+// Not linked to tenancy or landlord — organization-wide P&L.
 // NEVER hard delete. Soft delete only (deleted: true).
 
 import { mongoose } from "../config/db.server.js";
 
 const { Schema } = mongoose;
 
-const agencyExpenseSchema = new Schema(
+const organizationExpenseSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -67,7 +67,7 @@ const agencyExpenseSchema = new Schema(
       default: null,
       // link to property if expense is property-specific
       // e.g. maintenance cost for a specific property
-      // null for general agency expenses
+      // null for general organization expenses
     },
 
     // ── Receipt ───────────────────────────────────────────────
@@ -128,12 +128,12 @@ const agencyExpenseSchema = new Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-agencyExpenseSchema.index({ agencyId: 1, category: 1 });
-agencyExpenseSchema.index({ agencyId: 1, date: 1 });
-agencyExpenseSchema.index({ agencyId: 1, propertyId: 1 });
-agencyExpenseSchema.index({ agencyId: 1, deleted: 1 });
-agencyExpenseSchema.index({ agencyId: 1, deleted: 1, date: 1 });
+organizationExpenseSchema.index({ organizationId: 1, category: 1 });
+organizationExpenseSchema.index({ organizationId: 1, date: 1 });
+organizationExpenseSchema.index({ organizationId: 1, propertyId: 1 });
+organizationExpenseSchema.index({ organizationId: 1, deleted: 1 });
+organizationExpenseSchema.index({ organizationId: 1, deleted: 1, date: 1 });
 
-export const AgencyExpense =
-  mongoose.models.AgencyExpense ||
-  mongoose.model("AgencyExpense", agencyExpenseSchema);
+export const OrganizationExpense =
+  mongoose.models.OrganizationExpense ||
+  mongoose.model("OrganizationExpense", organizationExpenseSchema);

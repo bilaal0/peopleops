@@ -1,9 +1,9 @@
 import { Link, useLocation, useFetcher } from "react-router";
 import { Bell, ChevronDown, AlertTriangle, Info, Clock, Activity, Loader2, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { getAgencyLogoUrl } from "../../utils/agencyLogo.js";
+import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 
-export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, agency }) {
+export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, organization }) {
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -22,7 +22,7 @@ export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, age
     if (path.startsWith("/rent")) return "Rent";
     if (path.startsWith("/documents")) return "Documents";
     if (path.startsWith("/compliance")) return "Compliance";
-    if (path.startsWith("/agency/settings")) return "Settings";
+    if (path.startsWith("/organization/settings")) return "Settings";
     return "Portal";
   };
 
@@ -206,10 +206,10 @@ export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, age
             onClick={() => setProfileOpen((v) => !v)}
             className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] bg-white px-2.5 py-1.5 transition hover:border-[#2563EB] hover:bg-[#EFF6FF]"
           >
-            {getAgencyLogoUrl(agency?.image) ? (
+            {getOrganizationLogoUrl(organization?.image) ? (
               <img
-                src={getAgencyLogoUrl(agency.image)}
-                alt={agency?.name || "Organization Logo"}
+                src={getOrganizationLogoUrl(organization.image)}
+                alt={organization?.name || "Organization Logo"}
                 className="h-8 w-8 rounded-full object-cover border border-slate-200 bg-white shrink-0"
               />
             ) : (
@@ -219,7 +219,7 @@ export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, age
             )}
             <div className="hidden md:block text-left">
               <p className="text-sm font-semibold leading-none text-[#1E293B]">{user?.name || "User"}</p>
-              <p className="mt-0.5 text-[10px] leading-none text-[#94A3B8] font-medium truncate max-w-[120px]">{agency?.name || "Organization"}</p>
+              <p className="mt-0.5 text-[10px] leading-none text-[#94A3B8] font-medium truncate max-w-[120px]">{organization?.name || "Organization"}</p>
             </div>
             <ChevronDown className={`hidden h-3.5 w-3.5 text-[#94A3B8] transition-transform md:block ${profileOpen ? "rotate-180" : ""}`} />
           </button>
@@ -227,10 +227,10 @@ export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, age
           {profileOpen && (
             <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-[#E2E8F0] bg-white p-1.5 shadow-lg">
               <div className="border-b border-[#E2E8F0] px-3 py-2 flex items-center gap-3">
-                {getAgencyLogoUrl(agency?.image) && (
+                {getOrganizationLogoUrl(organization?.image) && (
                   <img
-                    src={getAgencyLogoUrl(agency.image)}
-                    alt={agency?.name}
+                    src={getOrganizationLogoUrl(organization.image)}
+                    alt={organization?.name}
                     className="w-10 h-10 rounded-lg object-cover border border-slate-200 bg-white shrink-0"
                   />
                 )}
@@ -238,14 +238,14 @@ export default function TopBar({ sidebarCollapsed, onMobileMenuToggle, user, age
                   <p className="text-sm font-semibold text-[#1E293B] truncate">{user?.name || "User"}</p>
                   <p className="text-xs text-[#64748B] truncate">{user?.email || ""}</p>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] truncate">
-                    {agency?.name || "Organization"}
+                    {organization?.name || "Organization"}
                   </p>
                 </div>
               </div>
 
               <div className="py-1">
                 <Link
-                  to="/agency/settings"
+                  to="/organization/settings"
                   onClick={() => setProfileOpen(false)}
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] transition hover:bg-[#EFF6FF] hover:text-[#1E293B]"
                 >

@@ -4,7 +4,7 @@
 // Supports Santander, Lloyds, Barclays, and HSBC.
 //
 // Rules (from Section 10):
-// - Strict agency isolation enforced
+// - Strict organization isolation enforced
 // - Rounding to 2dp
 // - Soft delete only
 
@@ -15,7 +15,7 @@ import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";
 import { Property } from "../../models/property.server.js";
 import { RentPayment } from "../../models/rentPayment.server.js";
-import { AgencyExpense } from "../../models/agencyExpense.server.js";
+import { OrganizationExpense } from "../../models/organizationExpense.server.js";
 import { parseAndNormaliseCsv, suggestMatchesForTransactions } from "../../utils/csv-parser.server.js";
 import { calculateCommission } from "../../utils/rent-payment.js";
 import { logRentPartial, logRentReceived } from "../../utils/activityLog.server.js";
@@ -38,14 +38,14 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
 
   // Load outstanding Rent Payments to populate dropdown lists in Step 2 matchers
   const outstandingRent = await RentPayment.find({
-    agencyId,
+    organizationId,
     status: { $in: ["pending", "overdue", "due", "partial"] },
     deleted: false
   })
@@ -55,7 +55,7 @@ export async function loader({ request }) {
     .sort({ dueDate: 1 })
     .lean();
 
-  const properties = await Property.find({ agencyId, deleted: false }).select("addressLine1").lean();
+  const properties = await Property.find({ organizationId, deleted: false }).select("addressLine1").lean();
 
   return {
     outstandingRent: outstandingRent.map(p => ({
@@ -75,7 +75,7 @@ export async function action({ request }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -97,8 +97,8 @@ export async function action({ request }) {
         return { success: false, error: "No valid transactions found in the CSV statement." };
       }
 
-      // Generate suggested matches strictly isolated by agencyId
-      const suggestions = await suggestMatchesForTransactions(transactions, agencyId);
+      // Generate suggested matches strictly isolated by organizationId
+      const suggestions = await suggestMatchesForTransactions(transactions, organizationId);
 
       return {
         success: true,
@@ -131,7 +131,7 @@ export async function action({ request }) {
 
     for (const r of rows) {
       if (r.action === "match-rent" && r.matchedPaymentId) {
-        const payment = await RentPayment.findOne({ _id: r.matchedPaymentId, agencyId, deleted: false });
+        const payment = await RentPayment.findOne({ _id: r.matchedPaymentId, organizationId, deleted: false });
         if (payment) {
           const amountPaid = round2(Math.abs(r.amount));
           
@@ -167,8 +167,8 @@ export async function action({ request }) {
         }
       } 
       else if (r.action === "create-expense" && r.expenseCategory) {
-        await AgencyExpense.create({
-          agencyId,
+        await OrganizationExpense.create({
+          organizationId,
           category: r.expenseCategory,
           description: r.description,
           amount: round2(Math.abs(r.amount)),
@@ -469,7 +469,7 @@ export default function CsvImport() {
                             >
                               <option value="ignore">Ignore row</option>
                               {s.type === "credit" && <option value="match-rent">Match Rent Payment</option>}
-                              {s.type === "debit" && <option value="create-expense">Mark as Agency Expense</option>}
+                              {s.type === "debit" && <option value="create-expense">Mark as Organization Expense</option>}
                             </select>
 
                             {/* Dropdowns based on action */}

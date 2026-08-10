@@ -34,12 +34,12 @@ const EPC_COLORS = {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId };
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId };
 
-  const properties = await Property.find({ ...agencyFilter, deleted: false })
+  const properties = await Property.find({ ...organizationFilter, deleted: false })
     .populate("landlordId", "title firstName lastName")
     .sort({ createdAt: -1 })
     .lean();

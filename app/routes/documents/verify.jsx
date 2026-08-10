@@ -10,7 +10,7 @@ export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return data({ error: "Unauthorised" }, { status: 401 });
   
-  // NOTE: Temporarily allowing any agency user to verify documents as requested
+  // NOTE: Temporarily allowing any organization user to verify documents as requested
 
   const formData   = await request.formData();
   const documentId = formData.get("documentId");
@@ -23,10 +23,10 @@ export async function action({ request }) {
 
   await connect();
   
-  // Verify document exists and belongs to this agency
+  // Verify document exists and belongs to this organization
   const doc = await Document.findOne({ 
     _id: documentId, 
-    agencyId: user.agencyId 
+    organizationId: user.organizationId 
   });
   
   if (!doc) {

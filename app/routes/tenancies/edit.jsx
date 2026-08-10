@@ -20,18 +20,18 @@ import { TenancyForm } from "../../components/tenancy/TenancyForm.jsx";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) {
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) {
     return redirect("/dashboard");
   }
 
   await connect();
 
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN")
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN")
     ? {}
-    : { agencyId: user.agencyId };
+    : { organizationId: user.organizationId };
 
   const tenancy = await Tenancy.findOne({
-    ...agencyFilter,
+    ...organizationFilter,
     _id: params.id,
   }).lean();
 
@@ -41,7 +41,7 @@ export async function loader({ request, params }) {
 
   // Properties available for letting, plus the tenancy's currently selected property
   const properties = await Property.find({
-    ...agencyFilter,
+    ...organizationFilter,
     deleted: false,
     $or: [
       { status: { $in: ["available", "under_offer"] } },
@@ -55,7 +55,7 @@ export async function loader({ request, params }) {
 
   // Active tenants
   const tenants = await User.find({
-    ...agencyFilter,
+    ...organizationFilter,
     roles: "TENANT",
     status: 1,
     deleted: false,
@@ -115,7 +115,7 @@ export async function loader({ request, params }) {
 export async function action({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) {
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) {
     return redirect("/dashboard");
   }
 
@@ -133,12 +133,12 @@ export async function action({ request, params }) {
 
   await connect();
 
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN")
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN")
     ? {}
-    : { agencyId: user.agencyId };
+    : { organizationId: user.organizationId };
 
   try {
-    const tenancy = await Tenancy.findOne({ ...agencyFilter, _id: params.id });
+    const tenancy = await Tenancy.findOne({ ...organizationFilter, _id: params.id });
     if (!tenancy) {
       return data({ error: "Tenancy not found or access denied." }, { status: 404 });
     }
@@ -147,8 +147,8 @@ export async function action({ request, params }) {
 
     // ── STEP 2: Fetch Property & Tenants ─────────────────────────────────────
     const [property, tenantRecords] = await Promise.all([
-      Property.findOne({ ...agencyFilter, _id: v.propertyId, deleted: false }).lean(),
-      User.find({ ...agencyFilter, _id: { $in: tenantIds }, roles: "TENANT" }).lean(),
+      Property.findOne({ ...organizationFilter, _id: v.propertyId, deleted: false }).lean(),
+      User.find({ ...organizationFilter, _id: { $in: tenantIds }, roles: "TENANT" }).lean(),
     ]);
 
     if (!property) {
@@ -179,7 +179,7 @@ export async function action({ request, params }) {
       property._id,
       landlordId,
       tenantIds,
-      user.agencyId
+      user.organizationId
     );
 
     // Since this is an edit, filter out propertyStatus 'let' block

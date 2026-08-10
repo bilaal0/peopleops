@@ -75,11 +75,11 @@ export async function action({ request }) {
 
     await user.save();
 
-    // Auto-login with full session (including agencyId)
+    // Auto-login with full session (including organizationId)
     return await createUserSessionRedirect({
       userId: String(user._id),
       roles: user.roles || [],
-      agencyId: user.agencyId ? String(user.agencyId) : null,
+      organizationId: user.organizationId ? String(user.organizationId) : null,
       remember: true,
       redirectTo: "/dashboard",
     });

@@ -3,7 +3,7 @@
 // Feels like a premium financial SaaS product — Linear/Stripe design language.
 //
 // Rules (from Section 10):
-// - Agency isolation: all queries checked against user.agencyId
+// - Organization isolation: all queries checked against user.organizationId
 // - Month navigation state via URL params (?month=5&year=2026)
 // - 2dp rounding on all calculations
 // - Soft delete only
@@ -43,10 +43,10 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
 
   // 1. Month/Year Navigation from URL
   const url = new URL(request.url);
@@ -58,7 +58,7 @@ export async function loader({ request }) {
   const periodEnd = new Date(year, month, 0, 23, 59, 59, 999);
 
   // 2. Fetch metrics
-  const summary = await getRentSummaryForMonth(agencyId, year, month);
+  const summary = await getRentSummaryForMonth(organizationId, year, month);
 
   // 3. Filters
   const statusFilter = url.searchParams.get("status") || "all";
@@ -67,7 +67,7 @@ export async function loader({ request }) {
   const searchFilter = url.searchParams.get("search") || "";
 
   const query = {
-    agencyId,
+    organizationId,
     deleted: false,
     periodStart: { $gte: periodStart, $lte: periodEnd }
   };
@@ -120,12 +120,12 @@ export async function loader({ request }) {
   }
 
   // 5. Fetch Landlords and Properties for filters & actions
-  const landlords = await User.find({ agencyId, roles: "LANDLORD", deleted: false })
+  const landlords = await User.find({ organizationId, roles: "LANDLORD", deleted: false })
     .select("title firstName lastName landlordData")
     .sort({ firstName: 1, lastName: 1 })
     .lean();
 
-  const properties = await Property.find({ agencyId, deleted: false })
+  const properties = await Property.find({ organizationId, deleted: false })
     .select("addressLine1 city")
     .sort({ addressLine1: 1 })
     .lean();
@@ -146,7 +146,7 @@ export async function action({ request }) {
   if (!user) return redirect("/login");
 
   await connect();
-  const agencyId = user.agencyId;
+  const organizationId = user.organizationId;
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -162,7 +162,7 @@ export async function action({ request }) {
     const notes = formData.get("notes") || null;
     const isPartial = formData.get("isPartial") === "true";
 
-    const payment = await RentPayment.findOne({ _id: paymentId, agencyId });
+    const payment = await RentPayment.findOne({ _id: paymentId, organizationId });
     if (!payment) return { success: false, error: "Payment record not found." };
 
     // ── Section 10 Rule 3: Use commission rates FROZEN on RentPayment at creation ──
@@ -211,7 +211,7 @@ export async function action({ request }) {
     const paymentId = formData.get("paymentId");
     const waivedReason = formData.get("waivedReason");
 
-    const payment = await RentPayment.findOne({ _id: paymentId, agencyId });
+    const payment = await RentPayment.findOne({ _id: paymentId, organizationId });
     if (!payment) return { success: false, error: "Payment record not found." };
 
     payment.status = "waived";
@@ -236,10 +236,10 @@ export async function action({ request }) {
     const errors = [];
 
     for (const landlordId of landlordIds) {
-      const landlord = await User.findOne({ _id: landlordId, agencyId }).lean();
+      const landlord = await User.findOne({ _id: landlordId, organizationId }).lean();
       if (!landlord) continue;
 
-      const preview = await calculateDisbursement(landlordId, agencyId, periodStartStr, periodEndStr);
+      const preview = await calculateDisbursement(landlordId, organizationId, periodStartStr, periodEndStr);
       if (preview) {
         if (preview.error === "negative") {
           errors.push({
@@ -285,7 +285,7 @@ export async function action({ request }) {
 
       // Check if already disbursed for this period to avoid duplicates
       const exists = await Disbursement.findOne({
-        agencyId,
+        organizationId,
         landlordId: item.landlordId,
         periodStart: new Date(periodStartStr),
         periodEnd: new Date(periodEndStr),
@@ -298,7 +298,7 @@ export async function action({ request }) {
       const bankSnapshot = landlord?.landlordData?.bankDetails || {};
 
       await Disbursement.create({
-        agencyId,
+        organizationId,
         landlordId: item.landlordId,
         propertyIds: item.propertyIds,
         rentPaymentIds: item.rentPaymentIds,

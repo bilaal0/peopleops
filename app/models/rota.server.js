@@ -33,8 +33,8 @@ const rotaSchema = new Schema(
     assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
     assignedToName: { type: String },
 
-    // Agency scope
-    agencyId: { type: Schema.Types.ObjectId, ref: "Agency", default: null },
+    // Organization scope
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', default: null },
     addedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     // FullCalendar event colour
@@ -46,7 +46,7 @@ const rotaSchema = new Schema(
 );
 
 // Index for efficient queries
-rotaSchema.index({ date: 1, agencyId: 1 });
+rotaSchema.index({ date: 1, organizationId: 1 });
 rotaSchema.index({ employee: 1 });
 rotaSchema.index({ assignedTo: 1 });
 

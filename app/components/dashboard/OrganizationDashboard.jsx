@@ -37,14 +37,14 @@ function formatTime(value) {
   }
 }
 
-export default function AgencyDashboard({ agency, dashboardData, user }) {
-  if (!agency) {
+export default function OrganizationDashboard({ organization, dashboardData, user }) {
+  if (!organization) {
     return (
       <div className="mx-auto max-w-7xl p-6">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">Agency Account Link Required</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">Organization Account Link Required</p>
           <p className="mt-2 text-sm text-red-800">
-            Your profile is not currently linked to an agency. Please contact support.
+            Your profile is not currently linked to an organization. Please contact support.
           </p>
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function AgencyDashboard({ agency, dashboardData, user }) {
     return (
       <div className="w-full pt-10 flex justify-center">
         <p className="text-lg text-gray-900 font-normal">
-          Welcome to <span className="font-semibold">{agency.name}</span>
+          Welcome to <span className="font-semibold">{organization.name}</span>
         </p>
       </div>
     );
@@ -64,7 +64,7 @@ export default function AgencyDashboard({ agency, dashboardData, user }) {
   return (
     <div className="w-full pt-10 flex justify-center">
       <p className="text-lg text-gray-900 font-normal">
-        Welcome to <span className="font-semibold">{agency.name}</span>
+        Welcome to <span className="font-semibold">{organization.name}</span>
       </p>
     </div>
   );

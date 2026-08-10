@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
 import { Form } from "react-router-dom";
 import Button from "../ui/Button";
-import { validateAgency } from "../../utils/validator";
-import { getAgencyLogoUrl } from "../../utils/agencyLogo.js";
+import { validateOrganization } from "../../utils/validator";
+import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 import UKAddressFields from "../ui/UKAddressFields.jsx";
 
-export default function AgencyForm({ 
+export default function OrganizationForm({ 
   initialData = {}, 
   onCancel,
-  submitLabel = "Save Agency",
+  submitLabel = "Save Organization",
   serverErrors = {} 
 }) {
   // Only keep state for UI logic (conditional rendering) + Image Preview
-  const [imagePreview, setImagePreview] = useState(() => getAgencyLogoUrl(initialData.image));
+  const [imagePreview, setImagePreview] = useState(() => getOrganizationLogoUrl(initialData.image));
   
   useEffect(() => {
     if (initialData.image) {
-      setImagePreview(getAgencyLogoUrl(initialData.image));
+      setImagePreview(getOrganizationLogoUrl(initialData.image));
     }
   }, [initialData.image]);
 
@@ -24,9 +24,11 @@ export default function AgencyForm({
   const [errors, setErrors] = useState(serverErrors || {});
 
   // Sync server errors if they change (e.g., from actionData)
-  if (serverErrors && Object.keys(serverErrors).length > 0 && Object.keys(errors).length === 0) {
+  useEffect(() => {
+    if (serverErrors) {
       setErrors(serverErrors);
-  }
+    }
+  }, [serverErrors]);
 
   const handleFileChange = (e) => {
       const file = e.target.files[0];
@@ -49,7 +51,7 @@ export default function AgencyForm({
       <div className="grid grid-cols-1 gap-8">
         {/* Left Column: Basic Info & Logo */}
         <div className="space-y-6">
-             <h3 className="text-xl font-semibold text-gray-900 border-b pb-2 mb-4">Agency Details</h3>
+             <h3 className="text-xl font-semibold text-gray-900 border-b pb-2 mb-4">Organization Details</h3>
              
              {/* Logo Upload - Moved to top */}
              <div className="flex items-start gap-6">
@@ -63,7 +65,7 @@ export default function AgencyForm({
                      )}
                  </div>
                  <div className="flex-1">
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Agency Logo</label>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Organization Logo</label>
                      <input 
                         name="image"
                         type="file" 
@@ -78,7 +80,7 @@ export default function AgencyForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Agency Name <span className="text-red-500">*</span>
+                        Organization Name <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"

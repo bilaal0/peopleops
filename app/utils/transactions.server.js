@@ -2,7 +2,7 @@
 // Core financial calculation functions for the Rent Tracker and Transactions module.
 //
 // RULES (from Section 10):
-// - Agency isolation: every query includes { agencyId }
+// - Organization isolation: every query includes { organizationId }
 // - Commission copied at creation time from RentPayment records — never from current property
 // - All amounts in pounds to exactly 2dp: Math.round(x * 100) / 100
 // - Disbursements are summaries; they never replace the underlying RentPayments
@@ -11,7 +11,7 @@
 import { mongoose } from "../config/db.server.js";
 import { RentPayment } from "../models/rentPayment.server.js";
 import { Disbursement } from "../models/disbursement.server.js";
-import { AgencyExpense } from "../models/agencyExpense.server.js";
+import { OrganizationExpense } from "../models/organizationExpense.server.js";
 
 const round2 = (n) => Math.round((n || 0) * 100) / 100;
 
@@ -29,16 +29,16 @@ const round2 = (n) => Math.round((n || 0) * 100) / 100;
 
 export async function calculateDisbursement(
   landlordId,
-  agencyId,
+  organizationId,
   periodStart,
   periodEnd,
   manualDeductions = [] // [{ description, amount }]
 ) {
   // Step 1: Find all RentPayments already covered by an existing Disbursement
-  // for this landlord in this agency — regardless of period.
+  // for this landlord in this organization — regardless of period.
   // This prevents double-counting if someone re-runs the calculation.
   const existingDisbursements = await Disbursement.find({
-    agencyId: new mongoose.Types.ObjectId(agencyId),
+    organizationId: new mongoose.Types.ObjectId(organizationId),
     landlordId: new mongoose.Types.ObjectId(landlordId),
     deleted: false,
     status: { $in: ["pending", "paid"] },
@@ -53,7 +53,7 @@ export async function calculateDisbursement(
   // Step 2: Find all paid/partial RentPayments for this landlord in the period
   // that have NOT already been included in a disbursement
   const payments = await RentPayment.find({
-    agencyId: new mongoose.Types.ObjectId(agencyId),
+    organizationId: new mongoose.Types.ObjectId(organizationId),
     landlordId: new mongoose.Types.ObjectId(landlordId),
     status: { $in: ["paid", "partial"] },
     periodStart: { $gte: new Date(periodStart), $lte: new Date(periodEnd) },
@@ -106,7 +106,7 @@ export async function calculateDisbursement(
 
   return {
     landlordId,
-    agencyId,
+    organizationId,
     periodStart: new Date(periodStart),
     periodEnd:   new Date(periodEnd),
     grossRent,
@@ -135,24 +135,24 @@ export async function calculateDisbursement(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// getAgencyFinancialSummary
+// getOrganizationFinancialSummary
 // ─────────────────────────────────────────────────────────────────────────────
-// Agency-wide financial overview for a given month/year.
+// Organization-wide financial overview for a given month/year.
 // Returns rent collected, commission earned, disbursements paid, expenses.
 // Used by the /transactions overview screen.
 
-export async function getAgencyFinancialSummary(agencyId, year, month) {
+export async function getOrganizationFinancialSummary(organizationId, year, month) {
   const periodStart = new Date(year, month - 1, 1);
   const periodEnd   = new Date(year, month, 0, 23, 59, 59, 999);
 
-  const agencyObjId = new mongoose.Types.ObjectId(agencyId);
+  const organizationObjId = new mongoose.Types.ObjectId(organizationId);
 
   const [rentData, disbursementData, expenseData] = await Promise.all([
     // Rent collected this period (payments with periodStart in period)
     RentPayment.aggregate([
       {
         $match: {
-          agencyId:    agencyObjId,
+          organizationId:    organizationObjId,
           status:      { $in: ["paid", "partial"] },
           deleted:     false,
           periodStart: { $gte: periodStart, $lte: periodEnd },
@@ -174,7 +174,7 @@ export async function getAgencyFinancialSummary(agencyId, year, month) {
     Disbursement.aggregate([
       {
         $match: {
-          agencyId: agencyObjId,
+          organizationId: organizationObjId,
           status:   "paid",
           deleted:  false,
           paidDate: { $gte: periodStart, $lte: periodEnd },
@@ -190,10 +190,10 @@ export async function getAgencyFinancialSummary(agencyId, year, month) {
     ]),
 
     // Expenses this period (by date)
-    AgencyExpense.aggregate([
+    OrganizationExpense.aggregate([
       {
         $match: {
-          agencyId: agencyObjId,
+          organizationId: organizationObjId,
           deleted:  false,
           date:     { $gte: periodStart, $lte: periodEnd },
         },
@@ -236,9 +236,9 @@ export async function getAgencyFinancialSummary(agencyId, year, month) {
         count:    e.count,
       })),
     },
-    // Agency net income = commission earned - expenses incurred
+    // Organization net income = commission earned - expenses incurred
     // (VAT collected is a pass-through — excluded from net income)
-    agencyNetIncome: round2(rent.totalCommission - totalExpenses),
+    organizationNetIncome: round2(rent.totalCommission - totalExpenses),
   };
 }
 
@@ -249,21 +249,21 @@ export async function getAgencyFinancialSummary(agencyId, year, month) {
 // Uses a SINGLE aggregation pipeline instead of 6 × 3 = 18 separate queries.
 // Used for the bar chart on the /transactions screen.
 
-export async function getLast6MonthsSummary(agencyId) {
+export async function getLast6MonthsSummary(organizationId) {
   const now = new Date();
 
   // Build the 6-month window
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
   const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  const agencyObjId = new mongoose.Types.ObjectId(agencyId);
+  const organizationObjId = new mongoose.Types.ObjectId(organizationId);
 
   // Single aggregation: group rent payments by year+month
   const [rentRows, expenseRows] = await Promise.all([
     RentPayment.aggregate([
       {
         $match: {
-          agencyId: agencyObjId,
+          organizationId: organizationObjId,
           deleted: false,
           status: { $in: ["paid", "partial"] },
           periodStart: { $gte: sixMonthsAgo, $lte: endOfThisMonth },
@@ -280,10 +280,10 @@ export async function getLast6MonthsSummary(agencyId) {
       },
     ]),
 
-    AgencyExpense.aggregate([
+    OrganizationExpense.aggregate([
       {
         $match: {
-          agencyId: agencyObjId,
+          organizationId: organizationObjId,
           deleted: false,
           date: { $gte: sixMonthsAgo, $lte: endOfThisMonth },
         },
@@ -336,16 +336,16 @@ export async function getLast6MonthsSummary(agencyId) {
 // Summary metrics for the /rent main tracker header strip.
 // Returns expected, collected, outstanding, and total disbursed for the month.
 
-export async function getRentSummaryForMonth(agencyId, year, month) {
+export async function getRentSummaryForMonth(organizationId, year, month) {
   const periodStart = new Date(year, month - 1, 1);
   const periodEnd   = new Date(year, month, 0, 23, 59, 59, 999);
-  const agencyObjId = new mongoose.Types.ObjectId(agencyId);
+  const organizationObjId = new mongoose.Types.ObjectId(organizationId);
 
   const [rentAgg, disbursedAgg, arrearsCount] = await Promise.all([
     RentPayment.aggregate([
       {
         $match: {
-          agencyId:    agencyObjId,
+          organizationId:    organizationObjId,
           deleted:     false,
           periodStart: { $gte: periodStart, $lte: periodEnd },
         },
@@ -364,7 +364,7 @@ export async function getRentSummaryForMonth(agencyId, year, month) {
     Disbursement.aggregate([
       {
         $match: {
-          agencyId:    agencyObjId,
+          organizationId:    organizationObjId,
           deleted:     false,
           status:      "paid",
           periodStart: { $gte: periodStart, $lte: periodEnd },
@@ -374,7 +374,7 @@ export async function getRentSummaryForMonth(agencyId, year, month) {
     ]),
 
     RentPayment.countDocuments({
-      agencyId:    agencyObjId,
+      organizationId:    organizationObjId,
       deleted:     false,
       status:      { $in: ["overdue", "partial"] },
       periodStart: { $gte: periodStart, $lte: periodEnd },

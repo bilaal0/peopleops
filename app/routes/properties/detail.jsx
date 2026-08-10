@@ -32,16 +32,16 @@ import Timeline from "../../components/timeline/Timeline.jsx";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { agencyId: user.agencyId };
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN") ? {} : { organizationId: user.organizationId };
 
   const fullUser = await User.findById(user.userId).lean();
   if (!fullUser) return redirect("/login");
 
   // 1. Fetch Property
-  const property = await Property.findOne({ _id: params.id, deleted: false, ...agencyFilter })
+  const property = await Property.findOne({ _id: params.id, deleted: false, ...organizationFilter })
     .populate("landlordId", "title firstName lastName email phone landlordData")
     .populate("createdBy", "title firstName lastName")
     .lean();
@@ -66,16 +66,16 @@ export async function loader({ request, params }) {
     DocumentType.find({ isActive: true, entity: "property" })
       .sort({ name: 1 })
       .lean(),
-    getNotesForEntity("property", property._id, user.agencyId, 1),
+    getNotesForEntity("property", property._id, user.organizationId, 1),
     MaintenanceJob.find({
       propertyId: property._id,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: { $ne: true },
       status: { $nin: ["closed", "cancelled"] },
     }).select("jobRef title category priority status targetDate contractorId reportedDate").populate("contractorId", "name").sort({ reportedDate: -1 }).lean(),
     PlannedMaintenanceSchedule.find({
       propertyId: property._id,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: { $ne: true },
     }).select("title category frequency nextDueDate active estimatedCost").sort({ nextDueDate: 1 }).lean(),
   ]);
@@ -288,7 +288,7 @@ export default function PropertyDetail() {
   const typeLabel = PROPERTY_TYPE_LABELS[p.propertyType] || p.propertyType;
   const statusBadge = STATUS_BADGE[p.status] || STATUS_BADGE.available;
   const epcBgClass = EPC_BG[getEpcRatingColour(p.epcRating)] || EPC_BG.grey;
-  const isAdmin = currentUserRole === "AGENCY_ADMIN" || currentUserRole === "SUPER_ADMIN";
+  const isAdmin = currentUserRole === "ORGANIZATION_ADMIN" || currentUserRole === "SUPER_ADMIN";
   const hasActiveTenancy = tenancies.some(t => t.status === "active");
 
   // All images: mainImage first, then gallery

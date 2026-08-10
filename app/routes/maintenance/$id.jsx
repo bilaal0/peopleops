@@ -40,14 +40,14 @@ import {
 export async function loader({ params, request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
-  // 1. Fetch Maintenance Job (Scoping to Agency)
+  // 1. Fetch Maintenance Job (Scoping to Organization)
   const job = await MaintenanceJob.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   })
     .populate("propertyId", "addressLine1 city postcode landlordId")
@@ -59,7 +59,7 @@ export async function loader({ params, request }) {
   // 2. Fetch Landlord User profile
   const landlord = await User.findOne({
     _id: job.landlordId,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   })
     .select("title firstName lastName phone email")
     .lean();
@@ -67,7 +67,7 @@ export async function loader({ params, request }) {
   // 3. Fetch active tenancy for property to show tenant contacts
   const tenancy = await Tenancy.findOne({
     propertyId: job.propertyId?._id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     status: "active",
   })
     .populate("tenantIds", "title firstName lastName phone email")
@@ -77,7 +77,7 @@ export async function loader({ params, request }) {
   const notes = await Note.find({
     entityType: "maintenance_job",
     entityId: job._id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   })
     .populate("addedBy", "title firstName lastName")
@@ -88,7 +88,7 @@ export async function loader({ params, request }) {
   const documents = await Document.find({
     entityType: "maintenance_job",
     entityId: job._id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: false,
   })
     .populate("uploadedBy", "title firstName lastName")
@@ -97,7 +97,7 @@ export async function loader({ params, request }) {
 
   // 6. Fetch available contractors for reassign dropdown
   const contractors = await Contractor.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     status: "active",
     deleted: false,
   })
@@ -140,7 +140,7 @@ export async function loader({ params, request }) {
 export async function action({ params, request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -149,7 +149,7 @@ export async function action({ params, request }) {
 
   const job = await MaintenanceJob.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   });
   if (!job) return data({ error: "Job not found" }, { status: 404 });
 
@@ -161,7 +161,7 @@ export async function action({ params, request }) {
     if (!text) return data({ error: "Note text cannot be empty" }, { status: 400 });
 
     await Note.create({
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       entityType: "maintenance_job",
       entityId: job._id,
       text,
@@ -183,11 +183,11 @@ export async function action({ params, request }) {
     }
 
     const buffer = await fileToBuffer(file);
-    const s3Key = buildS3Key(user.agencyId, "maintenance_job", job._id.toString(), documentType, file.name);
+    const s3Key = buildS3Key(user.organizationId, "maintenance_job", job._id.toString(), documentType, file.name);
     await uploadToS3(buffer, s3Key, file.type);
 
     const document = await Document.create({
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       entityType: "maintenance_job",
       entityId: job._id,
       documentType,
@@ -227,11 +227,11 @@ export async function action({ params, request }) {
       const invoiceFile = fd.get("invoiceFile");
       if (invoiceFile && invoiceFile.size > 0) {
         const buffer = await fileToBuffer(invoiceFile);
-        const s3Key = buildS3Key(user.agencyId, "maintenance_job", job._id.toString(), "job_invoice", invoiceFile.name);
+        const s3Key = buildS3Key(user.organizationId, "maintenance_job", job._id.toString(), "job_invoice", invoiceFile.name);
         await uploadToS3(buffer, s3Key, invoiceFile.type);
 
         const document = await Document.create({
-          agencyId: user.agencyId,
+          organizationId: user.organizationId,
           entityType: "maintenance_job",
           entityId: job._id,
           documentType: "job_invoice",
@@ -280,7 +280,7 @@ export async function action({ params, request }) {
 
     const contractor = await Contractor.findOne({
       _id: contractorId,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: false,
     }).lean();
     await logContractorAssigned(job, contractor, user);

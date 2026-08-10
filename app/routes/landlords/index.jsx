@@ -10,13 +10,13 @@ import DataTable from "../../components/ui/DataTable.jsx";
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
 
   const query = { roles: "LANDLORD", deleted: false };
   if (!user.roles?.includes("SUPER_ADMIN")) {
-    query.agencyId = user.agencyId;
+    query.organizationId = user.organizationId;
   }
 
   const users = await User.find(query).sort({ createdAt: -1 }).lean();
@@ -24,7 +24,7 @@ export async function loader({ request }) {
   return {
     landlords: users.map(u => ({
       _id: u._id.toString(),
-      agencyId: u.agencyId?.toString(),
+      organizationId: u.organizationId?.toString(),
       // Identity from User
       firstName: u.firstName || "",
       lastName: u.lastName || "",

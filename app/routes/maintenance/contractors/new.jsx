@@ -14,7 +14,7 @@ import UKAddressFields from "../../../components/ui/UKAddressFields.jsx";
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -38,7 +38,7 @@ export async function action({ request }) {
   const insuranceExpiry = get("insuranceExpiryDate");
 
   const contractor = await Contractor.create({
-    agencyId:     user.agencyId,
+    organizationId:     user.organizationId,
     name,
     contactName:  get("contactName"),
     email:        get("email"),

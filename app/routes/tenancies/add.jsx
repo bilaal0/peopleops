@@ -26,7 +26,7 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) {
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) {
     return redirect("/dashboard");
   }
 
@@ -37,13 +37,13 @@ export async function loader({ request }) {
 
   await connect();
 
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN")
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN")
     ? {}
-    : { agencyId: user.agencyId };
+    : { organizationId: user.organizationId };
 
   // Properties available for letting
   const properties = await Property.find({
-    ...agencyFilter,
+    ...organizationFilter,
     deleted: false,
     status: { $in: ["available", "under_offer"] },
   })
@@ -54,7 +54,7 @@ export async function loader({ request }) {
 
   // Active tenants
   const tenants = await User.find({
-    ...agencyFilter,
+    ...organizationFilter,
     roles: "TENANT",
     status: 1,
     deleted: false,
@@ -97,7 +97,7 @@ export async function loader({ request }) {
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) {
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) {
     return redirect("/dashboard");
   }
 
@@ -117,16 +117,16 @@ export async function action({ request }) {
 
   await connect();
 
-  const agencyFilter = user.roles?.includes("SUPER_ADMIN")
+  const organizationFilter = user.roles?.includes("SUPER_ADMIN")
     ? {}
-    : { agencyId: user.agencyId };
+    : { organizationId: user.organizationId };
 
   try {
     // ── STEP 2: Fetch Property & Tenants ─────────────────────────────────────
 
     const [property, tenantRecords] = await Promise.all([
-      Property.findOne({ ...agencyFilter, _id: v.propertyId, deleted: false }).lean(),
-      User.find({ ...agencyFilter, _id: { $in: tenantIds }, roles: "TENANT" }).lean(),
+      Property.findOne({ ...organizationFilter, _id: v.propertyId, deleted: false }).lean(),
+      User.find({ ...organizationFilter, _id: { $in: tenantIds }, roles: "TENANT" }).lean(),
     ]);
 
     if (!property) {
@@ -159,7 +159,7 @@ export async function action({ request }) {
       property._id,
       landlordId,
       tenantIds,
-      user.agencyId
+      user.organizationId
     );
 
     if (!preFlight.canCreate) {
@@ -188,7 +188,7 @@ export async function action({ request }) {
     reviewDate.setFullYear(reviewDate.getFullYear() + 1);
 
     const tenancy = await Tenancy.create({
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       propertyId: property._id,
       landlordId: landlordId,
       tenantIds: tenantIds,
@@ -238,7 +238,7 @@ export async function action({ request }) {
     // ── STEP 8: Redirect ──────────────────────────────────────────────────────
 
     await logPropertyStatusChanged(
-      { ...property, _id: property._id, agencyId: property.agencyId },
+      { ...property, _id: property._id, organizationId: property.organizationId },
       property.status || "available",
       "let",
       user,

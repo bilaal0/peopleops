@@ -1,27 +1,27 @@
 import { useState } from "react";
 import { useLoaderData, useActionData, Form, useNavigation } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
-import { Agency } from "../../models/agency.server.js";
-import { uploadAgencyLogo } from "../../utils/uploadAgencyLogo.server.js";
-import { getAgencyLogoUrl } from "../../utils/agencyLogo.js";
+import { Organization } from "../../models/organization.server.js";
+import { uploadOrganizationLogo } from "../../utils/uploadOrganizationLogo.server.js";
+import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 import { toast } from "react-hot-toast";
 import { Building2, Upload, Check, Shield, Layers, Users, Home } from "lucide-react";
 
 export async function loader({ request }) {
   const userClaims = await getUserFromRequest(request);
-  if (!userClaims || !userClaims.agencyId) {
-    throw new Response("Agency not found or not linked to user", { status: 404 });
+  if (!userClaims || !userClaims.organizationId) {
+    throw new Response("Organization not found or not linked to user", { status: 404 });
   }
 
-  const agency = await Agency.findById(userClaims.agencyId).lean();
-  if (!agency) {
-    throw new Response("Agency record not found", { status: 404 });
+  const organization = await Organization.findById(userClaims.organizationId).lean();
+  if (!organization) {
+    throw new Response("Organization record not found", { status: 404 });
   }
 
   return {
-    agency: {
-      ...agency,
-      _id: agency._id.toString(),
+    organization: {
+      ...organization,
+      _id: organization._id.toString(),
     },
     user: userClaims,
   };
@@ -29,8 +29,8 @@ export async function loader({ request }) {
 
 export async function action({ request }) {
   const userClaims = await getUserFromRequest(request);
-  if (!userClaims || !userClaims.agencyId) {
-    return { error: "Unauthorized or missing agency" };
+  if (!userClaims || !userClaims.organizationId) {
+    return { error: "Unauthorized or missing organization" };
   }
 
   const formData = await request.formData();
@@ -39,38 +39,38 @@ export async function action({ request }) {
   const imageFile = formData.get("image");
 
   try {
-    const agency = await Agency.findById(userClaims.agencyId);
-    if (!agency) return { error: "Agency not found" };
+    const organization = await Organization.findById(userClaims.organizationId);
+    if (!organization) return { error: "Organization not found" };
 
     if (name && name.trim()) {
-      agency.name = name.trim();
+      organization.name = name.trim();
     }
     if (slug && slug.trim()) {
-      agency.slug = slug.trim().toLowerCase().replace(/\s+/g, "-");
+      organization.slug = slug.trim().toLowerCase().replace(/\s+/g, "-");
     }
 
     if (imageFile && typeof imageFile === "object" && imageFile.size > 0) {
-      const logoKey = await uploadAgencyLogo(agency._id.toString(), imageFile);
+      const logoKey = await uploadOrganizationLogo(organization._id.toString(), imageFile);
       if (logoKey) {
-        agency.image = logoKey;
+        organization.image = logoKey;
       }
     }
 
-    await agency.save();
-    return { success: true, message: "Agency details and logo updated successfully!" };
+    await organization.save();
+    return { success: true, message: "Organization details and logo updated successfully!" };
   } catch (error) {
-    console.error("Error updating agency settings:", error);
-    return { error: "Failed to update agency settings." };
+    console.error("Error updating organization settings:", error);
+    return { error: "Failed to update organization settings." };
   }
 }
 
-export default function AgencySettingsPage() {
-  const { agency } = useLoaderData();
+export default function OrganizationSettingsPage() {
+  const { organization } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
-  const initialLogoUrl = getAgencyLogoUrl(agency.image);
+  const initialLogoUrl = getOrganizationLogoUrl(organization.image);
   const [logoPreview, setLogoPreview] = useState(initialLogoUrl);
 
   const handleFileChange = (e) => {
@@ -88,7 +88,7 @@ export default function AgencySettingsPage() {
         <div className="flex items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
             {logoPreview ? (
-              <img src={logoPreview} alt={agency.name} className="w-full h-full object-cover rounded-2xl" />
+              <img src={logoPreview} alt={organization.name} className="w-full h-full object-cover rounded-2xl" />
             ) : (
               <Building2 className="w-7 h-7" />
             )}
@@ -155,19 +155,19 @@ export default function AgencySettingsPage() {
                 <input
                   type="text"
                   name="name"
-                  defaultValue={agency.name}
+                  defaultValue={organization.name}
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium text-slate-900"
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
-                  Agency Slug / Code
+                  Organization Slug / Code
                 </label>
                 <input
                   type="text"
                   name="slug"
-                  defaultValue={agency.slug || ""}
+                  defaultValue={organization.slug || ""}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium text-slate-900"
                 />
               </div>
@@ -187,7 +187,7 @@ export default function AgencySettingsPage() {
                   <Shield className="w-4 h-4 text-indigo-600" />
                   Plan Tier
                 </div>
-                <p className="text-lg font-bold text-slate-900 capitalize">{agency.plan?.tier || "Free"}</p>
+                <p className="text-lg font-bold text-slate-900 capitalize">{organization.plan?.tier || "Free"}</p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
@@ -195,7 +195,7 @@ export default function AgencySettingsPage() {
                   <Home className="w-4 h-4 text-emerald-600" />
                   Property Capacity
                 </div>
-                <p className="text-lg font-bold text-slate-900">{agency.plan?.propertyLimit ?? 5} Properties</p>
+                <p className="text-lg font-bold text-slate-900">{organization.plan?.propertyLimit ?? 5} Properties</p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
@@ -203,7 +203,7 @@ export default function AgencySettingsPage() {
                   <Users className="w-4 h-4 text-blue-600" />
                   Team User Seats
                 </div>
-                <p className="text-lg font-bold text-slate-900">{agency.plan?.userLimit ?? 2} Staff Members</p>
+                <p className="text-lg font-bold text-slate-900">{organization.plan?.userLimit ?? 2} Staff Members</p>
               </div>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function AgencySettingsPage() {
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
-                  Save Agency Changes
+                  Save Organization Changes
                 </>
               )}
             </button>

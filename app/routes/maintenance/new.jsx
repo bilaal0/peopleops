@@ -37,7 +37,7 @@ import {
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -48,7 +48,7 @@ export async function loader({ request }) {
 
   // Get all active, non-deleted properties
   const properties = await Property.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     deleted: { $ne: true },
   })
     .select("addressLine1 city postcode landlordId")
@@ -57,7 +57,7 @@ export async function loader({ request }) {
 
   // Get all active, non-deleted contractors
   const contractors = await Contractor.find({
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     status: "active",
     deleted: false,
   })
@@ -76,7 +76,7 @@ export async function loader({ request }) {
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId) return redirect("/dashboard");
+  if (!user.organizationId) return redirect("/dashboard");
 
   await connect();
 
@@ -115,7 +115,7 @@ export async function action({ request }) {
   // Get property to retrieve landlordId
   const property = await Property.findOne({
     _id: propertyId,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   }).lean();
 
   if (!property) {
@@ -125,7 +125,7 @@ export async function action({ request }) {
   // Get active tenancy to link
   const activeTenancy = await Tenancy.findOne({
     propertyId: property._id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     status: "active",
   }).lean();
 
@@ -134,12 +134,12 @@ export async function action({ request }) {
   // Suggest/apply target date based on priority
   let targetDate = customTargetDateStr ? new Date(customTargetDateStr) : calculateTargetDate(priority, reportedDate);
 
-  // Generate unique Job Ref sequential per agency
-  const jobRef = await generateJobRef(user.agencyId);
+  // Generate unique Job Ref sequential per organization
+  const jobRef = await generateJobRef(user.organizationId);
 
   // Compile job creation details
   let jobData = {
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
     jobRef,
     propertyId,
     landlordId: property.landlordId.toString(),
@@ -193,7 +193,7 @@ export async function action({ request }) {
   if (contractorId) {
     const contractor = await Contractor.findOne({
       _id: contractorId,
-      agencyId: user.agencyId,
+      organizationId: user.organizationId,
       deleted: false,
     }).lean();
     await logContractorAssigned(job, contractor, user);
@@ -204,11 +204,11 @@ export async function action({ request }) {
   for (const file of files) {
     if (file && file.size > 0) {
       const buffer = await fileToBuffer(file);
-      const s3Key = buildS3Key(user.agencyId, "maintenance_job", job._id.toString(), "job_photo_before", file.name);
+      const s3Key = buildS3Key(user.organizationId, "maintenance_job", job._id.toString(), "job_photo_before", file.name);
       await uploadToS3(buffer, s3Key, file.type);
 
       await Document.create({
-        agencyId: user.agencyId,
+        organizationId: user.organizationId,
         entityType: "maintenance_job",
         entityId: job._id,
         documentType: "job_photo_before",
@@ -221,7 +221,7 @@ export async function action({ request }) {
 
       await logDocumentUploaded(
         {
-          agencyId: user.agencyId,
+          organizationId: user.organizationId,
           entityType: "maintenance_job",
           entityId: job._id,
           docType: { key: "job_photo_before", name: "Job Photo Before" },
@@ -636,7 +636,7 @@ export default function MaintenanceNew() {
                   {[
                     { value: "landlord", label: "Landlord (Deduct from rent)" },
                     { value: "tenant",   label: "Tenant Liability" },
-                    { value: "agency",   label: "Agency Covered" },
+                    { value: "organization",   label: "Organization Covered" },
                     { value: "insurance",label: "Insurance Claim" },
                     { value: "tbc",      label: "To Be Confirmed" },
                   ].map(item => (

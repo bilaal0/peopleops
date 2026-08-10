@@ -11,10 +11,10 @@ import { connect } from "../../config/db.server.js";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
-  const tenancy = await Tenancy.findOne({ _id: params.tenancyId, agencyId: user.agencyId })
+  const tenancy = await Tenancy.findOne({ _id: params.tenancyId, organizationId: user.organizationId })
     .populate("propertyId", "addressLine1 postcode")
     .populate("landlordId", "title firstName lastName")
     .populate("tenantIds", "title firstName lastName")

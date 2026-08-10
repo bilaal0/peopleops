@@ -13,7 +13,7 @@ export async function loader({ request, params }) {
   await connect();
   const obligation = await Obligation.findOne({
     _id: params.id,
-    agencyId: user.agencyId,
+    organizationId: user.organizationId,
   })
     .populate("obligationTypeId", "name")
     .lean();

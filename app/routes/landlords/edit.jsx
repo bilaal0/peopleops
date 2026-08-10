@@ -16,18 +16,18 @@ import { logAMLResult } from "../../utils/activityLog.server.js";
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
   if (!user) return redirect("/login");
-  if (!user.agencyId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
+  if (!user.organizationId && !user.roles?.includes("SUPER_ADMIN")) return redirect("/dashboard");
 
   await connect();
   const query = { _id: params.id, roles: "LANDLORD" };
   if (!user.roles?.includes("SUPER_ADMIN")) {
-    query.agencyId = user.agencyId;
+    query.organizationId = user.organizationId;
   }
 
   const profile = await User.findOne(query).lean();
   if (!profile) return redirect("/landlords");
   
-  const isAdmin = !!user.agencyId || user.roles?.includes("SUPER_ADMIN");
+  const isAdmin = !!user.organizationId || user.roles?.includes("SUPER_ADMIN");
   
   // Merge into a flat object for the form
   const landlord = {
@@ -92,10 +92,10 @@ export async function action({ request, params }) {
   try {
     await connect();
 
-    // Security: Ensure the user can only edit within their agency
+    // Security: Ensure the user can only edit within their organization
     const query = { _id: params.id, roles: "LANDLORD" };
     if (!user.roles?.includes("SUPER_ADMIN")) {
-      query.agencyId = user.agencyId;
+      query.organizationId = user.organizationId;
     }
 
     const profile = await User.findOne(query);

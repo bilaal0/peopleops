@@ -6,9 +6,9 @@ const { Schema } = mongoose;
 
 const maintenanceLogSchema = new Schema(
   {
-    agencyId: {
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -36,7 +36,7 @@ const maintenanceLogSchema = new Schema(
       type: Date, // emergency = reportedAt + 24hrs, urgent = reportedAt + 10 days
     },
 
-    respondedAt: { type: Date, default: null }, // When agency acknowledged/responded
+    respondedAt: { type: Date, default: null }, // When organization acknowledged/responded
     resolvedAt: { type: Date, default: null }, // When repair was completed
 
     // Contractor details

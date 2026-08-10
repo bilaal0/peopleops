@@ -18,7 +18,7 @@ export default function SuperAdminDashboard({ stats }) {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500 uppercase tracking-widest">Total Organizations</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.totalAgencies || 0}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalOrganizations || 0}</p>
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-gray-100">

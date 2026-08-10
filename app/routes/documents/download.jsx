@@ -22,8 +22,8 @@ export async function loader({ request, params }) {
 
   await connect();
 
-  // Find by _id only — agencyId is not enforced here because documents
-  // uploaded from staff/client pages may have null agencyId.
+  // Find by _id only — organizationId is not enforced here because documents
+  // uploaded from staff/client pages may have null organizationId.
   const doc = await Document.findOne({ _id: params.id, deleted: false }).lean();
 
   if (!doc) {

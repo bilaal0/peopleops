@@ -117,7 +117,7 @@ export default function ForgotPassword() {
                     defaultValue={actionData?.values?.email}
                     autoComplete="email"
                     required
-                    placeholder="you@agencyname.co.uk"
+                    placeholder="you@organizationname.co.uk"
                     className={`block w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm outline-none transition focus:ring-4 focus:ring-indigo-500/10 ${
                       actionData?.errors?.email
                         ? "border-red-400 focus:border-red-400"

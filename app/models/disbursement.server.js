@@ -1,5 +1,5 @@
 // models/disbursement.server.js
-// Records when agency pays landlord their net rent.
+// Records when organization pays landlord their net rent.
 // Summarises one or more RentPayments — does NOT replace them.
 // RentPayment = what tenant paid. Disbursement = what landlord received.
 // NEVER hard delete. Soft delete only (deleted: true).
@@ -10,10 +10,10 @@ const { Schema } = mongoose;
 
 const disbursementSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -67,13 +67,13 @@ const disbursementSchema = new Schema(
     totalCommission: {
       type: Number,
       required: true,
-      // agency commission deducted (copied from RentPayment records)
+      // organization commission deducted (copied from RentPayment records)
       // NEVER recalculated from current property settings
     },
     totalVat: {
       type: Number,
       default: 0,
-      // VAT on commission if agency is VAT registered
+      // VAT on commission if organization is VAT registered
     },
     deductions: {
       type: [
@@ -93,7 +93,7 @@ const disbursementSchema = new Schema(
       ],
       default: [],
       // maintenance costs or other deductions from landlord payment
-      // e.g. agency paid plumber on landlord's behalf
+      // e.g. organization paid plumber on landlord's behalf
       // deducted from disbursement amount
     },
     totalDeductions: {
@@ -123,7 +123,7 @@ const disbursementSchema = new Schema(
     paidDate: {
       type: Date,
       default: null,
-      // date agency transferred money to landlord
+      // date organization transferred money to landlord
     },
     paymentMethod: {
       type: String,
@@ -176,11 +176,11 @@ const disbursementSchema = new Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-disbursementSchema.index({ agencyId: 1, landlordId: 1 });
-disbursementSchema.index({ agencyId: 1, status: 1 });
-disbursementSchema.index({ agencyId: 1, periodStart: 1 });
-disbursementSchema.index({ agencyId: 1, deleted: 1 });
-disbursementSchema.index({ agencyId: 1, landlordId: 1, periodStart: 1 });
+disbursementSchema.index({ organizationId: 1, landlordId: 1 });
+disbursementSchema.index({ organizationId: 1, status: 1 });
+disbursementSchema.index({ organizationId: 1, periodStart: 1 });
+disbursementSchema.index({ organizationId: 1, deleted: 1 });
+disbursementSchema.index({ organizationId: 1, landlordId: 1, periodStart: 1 });
 // check for existing disbursement for same landlord + period
 
 export const Disbursement =

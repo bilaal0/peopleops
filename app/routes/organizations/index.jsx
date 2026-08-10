@@ -1,33 +1,35 @@
 /**
- * Agencies List Page
+ * Organizations List Page
  */
 
 import React from "react";
 import { useNavigate, useLoaderData, useSubmit, useActionData } from "react-router";
 import Button from "../../components/ui/Button";
-import { Agency } from "../../models/agency.server.js";
+import { Organization } from "../../models/organization.server.js";
 import { User } from "../../models/user.server.js";
 import { sendEmail, emailTemplates } from "../../utils/email.server";
 import { toast } from "react-hot-toast";
 
-import { requireUserRole } from "../../utils/auth.server";
+import { requireUserSession } from "../../utils/auth.server";
 import { Roles } from "../../utils/permission";
-import { getAgencyLogoUrl } from "../../utils/agencyLogo.js";
+import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 
 export async function loader({ request }) {
-    // Protect route: Only SUPER_ADMIN (or MASTER_ADMIN if you want) can view this
-    // User asked for "SUPER_ADMIN", so we enforce that.
-    await requireUserRole(request, Roles.SUPER_ADMIN);
+    // Protect route: Only SUPER_ADMIN can view this
+    const user = await requireUserSession(request);
+    if (!user.roles?.includes(Roles.SUPER_ADMIN)) {
+        throw new Response("Unauthorized", { status: 403 });
+    }
 
-    // Fetch agencies and populate primaryAdmin for display
+    // Fetch organizations and populate primaryAdmin for display
     // using .lean() to ensure we get plain JS objects, preventing serialization issues
-    const agencies = await Agency.find({ deleted: false })
+    const organizations = await Organization.find({ deleted: false })
         .populate("primaryAdmin", "email firstName lastName emailVerified inviteToken inviteExpires") // Include invite fields
         .sort({ createdAt: -1 })
         .lean();
 
     // Transform _id to string manually to avoid "[object Object]" serialization issues on client
-    const serializedOrgs = agencies.map(org => ({
+    const serializedOrgs = organizations.map(org => ({
         ...org,
         _id: org._id.toString(),
         primaryAdmin: org.primaryAdmin ? {
@@ -36,7 +38,7 @@ export async function loader({ request }) {
         } : null
     }));
 
-    return { agencies: serializedOrgs };
+    return { organizations: serializedOrgs };
 }
 
 export async function action({ request }) {
@@ -46,7 +48,7 @@ export async function action({ request }) {
     if (intent === "delete") {
         const id = formData.get("id");
         if (id) {
-            await Agency.findByIdAndUpdate(id, { deleted: true });
+            await Organization.findByIdAndUpdate(id, { deleted: true });
             return { success: true };
         }
     }
@@ -83,7 +85,7 @@ export async function action({ request }) {
 
             await sendEmail({
                 to: user.email,
-                ...emailTemplates.agencyInvite({
+                ...emailTemplates.organizationInvite({
                     email: user.email,
                     inviteLink,
                     orgName: orgName
@@ -100,8 +102,8 @@ export async function action({ request }) {
     return null;
 }
 
-export default function AgenciesPage() {
-    const { agencies } = useLoaderData();
+export default function OrganizationsPage() {
+    const { organizations } = useLoaderData();
     const navigate = useNavigate();
     const submit = useSubmit();
     const actionData = useActionData();
@@ -150,7 +152,7 @@ export default function AgenciesPage() {
                         onClick={() => {
                             toast.dismiss(t.id);
                             submit({ intent: "delete", id: String(org._id) }, { method: "post" });
-                            toast.success("Agency deleted");
+                            toast.success("Organization deleted");
                         }}
                         className="px-3 py-1 text-sm bg-red-600 text-white hover:bg-red-700 rounded"
                     >
@@ -212,14 +214,14 @@ export default function AgenciesPage() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {agencies && agencies.length > 0 ? (
-                                    agencies.map((org) => (
+                                {organizations && organizations.length > 0 ? (
+                                    organizations.map((org) => (
                                         <tr key={org._id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 <div className="flex items-center gap-3">
-                                                    {getAgencyLogoUrl(org.image) ? (
+                                                    {getOrganizationLogoUrl(org.image) ? (
                                                         <img
-                                                            src={getAgencyLogoUrl(org.image)}
+                                                            src={getOrganizationLogoUrl(org.image)}
                                                             alt={org.name}
                                                             className="w-9 h-9 rounded-lg object-cover border border-gray-200 shrink-0 bg-white shadow-xs"
                                                         />

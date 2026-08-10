@@ -66,7 +66,7 @@ export default [
     route("organizations", "routes/organizations/index.jsx"),
     route("organizations/add", "routes/organizations/add.jsx"),
     route("organizations/:id/edit", "routes/organizations/edit.jsx"),
-    route("agency/settings", "routes/agency/settings.jsx"),
+    route("organization/settings", "routes/organization/settings.jsx"),
     route("users", "routes/users/index.jsx"),
     route("document-types", "routes/document-types/index.jsx"),
 

@@ -9,10 +9,10 @@ const { Schema } = mongoose;
 
 const maintenanceJobSchema = new Schema(
   {
-    // ── Agency scope ─────────────────────────────────────────
-    agencyId: {
+    // ── Organization scope ─────────────────────────────────────────
+    organizationId: {
       type: Schema.Types.ObjectId,
-      ref: "Agency",
+      ref: 'Organization',
       required: true,
       index: true,
     },
@@ -22,7 +22,7 @@ const maintenanceJobSchema = new Schema(
       type: String,
       required: true,
       // Auto-generated: MJ-2026-0001
-      // Sequential per agency. Never set manually.
+      // Sequential per organization. Never set manually.
       // See: utils/maintenance.server.js → generateJobRef()
     },
 
@@ -50,7 +50,7 @@ const maintenanceJobSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Contractor",
       default: null,
-      // Optional at all stages — small agencies use handymen not in system
+      // Optional at all stages — small organizations use handymen not in system
     },
 
     // ── Job details ───────────────────────────────────────────
@@ -150,7 +150,7 @@ const maintenanceJobSchema = new Schema(
     requiresLandlordApproval: {
       type: Boolean,
       default: false,
-      // Auto-set to true if estimatedCost > agency threshold (default £500)
+      // Auto-set to true if estimatedCost > organization threshold (default £500)
     },
     landlordApprovalStatus: {
       type: String,
@@ -203,14 +203,14 @@ const maintenanceJobSchema = new Schema(
     },
     costResponsibility: {
       type: String,
-      enum: ["landlord", "tenant", "agency", "insurance", "tbc"],
+      enum: ["landlord", "tenant", "organization", "insurance", "tbc"],
       default: "landlord",
     },
-    agencyExpenseId: {
+    organizationExpenseId: {
       type: Schema.Types.ObjectId,
-      ref: "AgencyExpense",
+      ref: "OrganizationExpense",
       default: null,
-      // If agency paid contractor: link to AgencyExpense record
+      // If organization paid contractor: link to OrganizationExpense record
       // Creates the audit trail for landlord deductions
     },
 
@@ -269,15 +269,15 @@ const maintenanceJobSchema = new Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-maintenanceJobSchema.index({ agencyId: 1, status: 1 });
-maintenanceJobSchema.index({ agencyId: 1, propertyId: 1 });
-maintenanceJobSchema.index({ agencyId: 1, priority: 1 });
-maintenanceJobSchema.index({ agencyId: 1, category: 1 });
-maintenanceJobSchema.index({ agencyId: 1, contractorId: 1 });
-maintenanceJobSchema.index({ agencyId: 1, targetDate: 1 });
-maintenanceJobSchema.index({ agencyId: 1, isAwaabsLaw: 1 });
-maintenanceJobSchema.index({ agencyId: 1, deleted: 1 });
-maintenanceJobSchema.index({ agencyId: 1, jobRef: 1 }, { unique: true });
+maintenanceJobSchema.index({ organizationId: 1, status: 1 });
+maintenanceJobSchema.index({ organizationId: 1, propertyId: 1 });
+maintenanceJobSchema.index({ organizationId: 1, priority: 1 });
+maintenanceJobSchema.index({ organizationId: 1, category: 1 });
+maintenanceJobSchema.index({ organizationId: 1, contractorId: 1 });
+maintenanceJobSchema.index({ organizationId: 1, targetDate: 1 });
+maintenanceJobSchema.index({ organizationId: 1, isAwaabsLaw: 1 });
+maintenanceJobSchema.index({ organizationId: 1, deleted: 1 });
+maintenanceJobSchema.index({ organizationId: 1, jobRef: 1 }, { unique: true });
 
 export const MaintenanceJob =
   mongoose.models.MaintenanceJob ||

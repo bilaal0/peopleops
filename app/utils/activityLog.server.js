@@ -86,7 +86,7 @@ function fileNameValue(document) {
 }
 
 export async function createSystemEvent({
-  agencyId,
+  organizationId,
   entityType,
   entityId,
   eventType,
@@ -96,9 +96,9 @@ export async function createSystemEvent({
   triggeredByUserId,
 }) {
   try {
-    if (!agencyId || !entityType || !entityId || !eventType || !text || !triggeredByUserId) {
+    if (!organizationId || !entityType || !entityId || !eventType || !text || !triggeredByUserId) {
       console.error("Activity log skipped: missing required fields", {
-        agencyId,
+        organizationId,
         entityType,
         entityId,
         eventType,
@@ -119,7 +119,7 @@ export async function createSystemEvent({
     }
 
     return await Note.create({
-      agencyId,
+      organizationId,
       entityType,
       entityId,
       eventType,
@@ -138,7 +138,7 @@ export async function createSystemEvent({
 export async function logLandlordAdded(landlord, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: landlord.agencyId || user.agencyId,
+    organizationId: landlord.organizationId || user.organizationId,
     entityType: "landlord",
     entityId: landlord._id,
     eventType: "landlord_added",
@@ -162,7 +162,7 @@ export async function logAMLResult(landlord, result, user) {
 
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: landlord.agencyId || user.agencyId,
+    organizationId: landlord.organizationId || user.organizationId,
     entityType: "landlord",
     entityId: landlord._id,
     eventType,
@@ -176,7 +176,7 @@ export async function logPropertyAdded(property, user) {
   const userName = await getFullUserName(user);
   const address = [property.addressLine1, property.city, property.postcode].filter(Boolean).join(", ");
   return createSystemEvent({
-    agencyId: property.agencyId || user.agencyId,
+    organizationId: property.organizationId || user.organizationId,
     entityType: "property",
     entityId: property._id,
     eventType: "property_added",
@@ -189,7 +189,7 @@ export async function logPropertyAdded(property, user) {
 export async function logPropertyStatusChanged(property, oldStatus, newStatus, user, options = {}) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: property.agencyId || options.agencyId || user.agencyId,
+    organizationId: property.organizationId || options.organizationId || user.organizationId,
     entityType: "property",
     entityId: property._id || property,
     eventType: "property_status_changed",
@@ -202,7 +202,7 @@ export async function logPropertyStatusChanged(property, oldStatus, newStatus, u
 export async function logTenantAdded(tenant, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: tenant.agencyId || user.agencyId,
+    organizationId: tenant.organizationId || user.organizationId,
     entityType: "tenant",
     entityId: tenant._id,
     eventType: "tenant_added",
@@ -216,7 +216,7 @@ export async function logRTRChecked(tenant, user, options = {}) {
   const userName = await getFullUserName(user);
   const docType = options.docType || tenant.tenantData?.rightToRentDocType || "Right to Rent document";
   return createSystemEvent({
-    agencyId: tenant.agencyId || user.agencyId,
+    organizationId: tenant.organizationId || user.organizationId,
     entityType: "tenant",
     entityId: tenant._id,
     eventType: "tenant_rtr_checked",
@@ -235,7 +235,7 @@ export async function logTenancyCreated(tenancy, user) {
   const userName = await getFullUserName(user);
   const startDate = formatDate(tenancy.startDate);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_created",
@@ -255,7 +255,7 @@ export async function logDepositProtected(tenancy, user) {
   const userName = await getFullUserName(user);
   const scheme = label(tenancy.deposit?.scheme);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_deposit_protected",
@@ -274,7 +274,7 @@ export async function logDepositProtected(tenancy, user) {
 export async function logPrescribedInfoServed(tenancy, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_deposit_prescribed_info_served",
@@ -290,7 +290,7 @@ export async function logPrescribedInfoServed(tenancy, user) {
 export async function logHowToRentServed(tenancy, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_how_to_rent_served",
@@ -312,7 +312,7 @@ export async function logRRAInformationSheetServed(tenancy, servedToNames, metho
     hand_delivered:   "hand delivery",
   };
   return createSystemEvent({
-    agencyId:          tenancy.agencyId || user.agencyId,
+    organizationId:          tenancy.organizationId || user.organizationId,
     entityType:        "tenancy",
     entityId:          tenancy._id,
     eventType:         "tenancy_rra_information_sheet_served",
@@ -331,7 +331,7 @@ export async function logSection8Created(tenancy, notice, user) {
   const userName = await getFullUserName(user);
   const grounds = Array.isArray(notice.grounds) ? notice.grounds.join(", ") : notice.grounds;
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_section8_notice_created",
@@ -349,7 +349,7 @@ export async function logSection8Created(tenancy, notice, user) {
 export async function logSection13Created(tenancy, notice, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_section13_notice_created",
@@ -368,7 +368,7 @@ export async function logSection13Created(tenancy, notice, user) {
 export async function logTenancyEnded(tenancy, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "tenancy_ended",
@@ -385,7 +385,7 @@ export async function logTenancyEnded(tenancy, user) {
 export async function logRentReceived(payment, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: payment.agencyId || user.agencyId,
+    organizationId: payment.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: payment.tenancyId,
     eventType: "rent_payment_received",
@@ -407,7 +407,7 @@ export async function logRentPartial(payment, user) {
   const userName = await getFullUserName(user);
   const outstanding = payment.outstanding ?? Math.max(Number(payment.amountDue || 0) - Number(payment.amountPaid || 0), 0);
   return createSystemEvent({
-    agencyId: payment.agencyId || user.agencyId,
+    organizationId: payment.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: payment.tenancyId,
     eventType: "rent_payment_partial",
@@ -427,7 +427,7 @@ export async function logRentPartial(payment, user) {
 export async function logRentWaived(payment, user, reason = null) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: payment.agencyId || user.agencyId,
+    organizationId: payment.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: payment.tenancyId,
     eventType: "rent_payment_waived",
@@ -445,7 +445,7 @@ export async function logRentWaived(payment, user, reason = null) {
 export async function logMaintenanceCreated(job, user, entityType = "maintenance_job", entityId = null) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: job.agencyId || user.agencyId,
+    organizationId: job.organizationId || user.organizationId,
     entityType,
     entityId: entityId || job._id,
     eventType: "maintenance_job_created",
@@ -465,7 +465,7 @@ export async function logMaintenanceCreated(job, user, entityType = "maintenance
 export async function logContractorAssigned(job, contractor, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: job.agencyId || user.agencyId,
+    organizationId: job.organizationId || user.organizationId,
     entityType: "maintenance_job",
     entityId: job._id,
     eventType: "maintenance_contractor_assigned",
@@ -489,7 +489,7 @@ export async function logMaintenanceStatusChanged(job, status, user, options = {
   const eventType = statusEventMap[status] || "maintenance_job_updated";
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: job.agencyId || user.agencyId,
+    organizationId: job.organizationId || user.organizationId,
     entityType: "maintenance_job",
     entityId: job._id,
     eventType,
@@ -518,7 +518,7 @@ export async function logDocumentUploaded(document, user, options = {}) {
   const safeEventType = NOTE_EVENT_TYPES.includes(eventType) ? eventType : "document_uploaded";
   const expiryText = document.expiryDate ? `. Expires ${formatDate(document.expiryDate)}` : "";
   return createSystemEvent({
-    agencyId: document.agencyId || user.agencyId,
+    organizationId: document.organizationId || user.organizationId,
     entityType: document.entityType,
     entityId: document.entityId,
     eventType: safeEventType,
@@ -537,7 +537,7 @@ export async function logDocumentUploaded(document, user, options = {}) {
 export async function logDocumentVerified(document, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: document.agencyId || user.agencyId,
+    organizationId: document.organizationId || user.organizationId,
     entityType: document.entityType,
     entityId: document.entityId,
     eventType: "document_verified",
@@ -554,7 +554,7 @@ export async function logDocumentVerified(document, user) {
 export async function logEvidenceBundleGenerated(tenancy, user) {
   const userName = await getFullUserName(user);
   return createSystemEvent({
-    agencyId: tenancy.agencyId || user.agencyId,
+    organizationId: tenancy.organizationId || user.organizationId,
     entityType: "tenancy",
     entityId: tenancy._id,
     eventType: "evidence_bundle_generated",

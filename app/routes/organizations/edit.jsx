@@ -1,27 +1,30 @@
 /**
- * Edit Agency Page
- * SUPER_ADMIN only — edit an existing agency/agency
+ * Edit Organization Page
+ * SUPER_ADMIN only — edit an existing organization/organization
  */
 
 import { redirect, data, useLoaderData, useActionData, useNavigate } from "react-router";
-import AgencyForm from "../../components/agencies/AgencyForm.jsx";
-import { Agency } from "../../models/agency.server.js";
+import OrganizationForm from "../../components/organizations/OrganizationForm.jsx";
+import { Organization } from "../../models/organization.server.js";
 import { User } from "../../models/user.server.js";
 import { toast } from "react-hot-toast";
 
-import { requireUserRole } from "../../utils/auth.server";
+import { requireUserSession } from "../../utils/auth.server";
 import { Roles } from "../../utils/permission";
-import { uploadAgencyLogo } from "../../utils/uploadAgencyLogo.server.js";
+import { uploadOrganizationLogo } from "../../utils/uploadOrganizationLogo.server.js";
 
 export async function loader({ request, params }) {
-  await requireUserRole(request, Roles.SUPER_ADMIN);
+  const user = await requireUserSession(request);
+  if (!user.roles?.includes(Roles.SUPER_ADMIN)) {
+    throw new Response("Unauthorized", { status: 403 });
+  }
 
-  const org = await Agency.findById(params.id)
-    .populate("primaryAdmin", "email firstName lastName phone addressLine1 emailVerified inviteToken")
+  const org = await Organization.findById(params.id)
+    .populate("primaryAdmin", "email firstName lastName phone addressLine1 addressLine2 addressLine3 city postTown postcode emailVerified inviteToken")
     .lean();
 
   if (!org || org.deleted) {
-    throw new Response("Agency not found", { status: 404 });
+    throw new Response("Organization not found", { status: 404 });
   }
 
   // Flatten for form
@@ -43,6 +46,11 @@ export async function loader({ request, params }) {
     email: org.primaryAdmin?.email || "",
     phone: org.primaryAdmin?.phone || "",
     addressLine1: org.primaryAdmin?.addressLine1 || "",
+    addressLine2: org.primaryAdmin?.addressLine2 || "",
+    addressLine3: org.primaryAdmin?.addressLine3 || "",
+    city: org.primaryAdmin?.city || "",
+    postTown: org.primaryAdmin?.postTown || "",
+    postcode: org.primaryAdmin?.postcode || "",
     // Read-only info
     adminVerified: org.primaryAdmin?.emailVerified || false,
     adminId: org.primaryAdmin?._id?.toString() || null,
@@ -52,7 +60,10 @@ export async function loader({ request, params }) {
 }
 
 export async function action({ request, params }) {
-  await requireUserRole(request, Roles.SUPER_ADMIN);
+  const user = await requireUserSession(request);
+  if (!user.roles?.includes(Roles.SUPER_ADMIN)) {
+    throw new Response("Unauthorized", { status: 403 });
+  }
 
   const formData = await request.formData();
   const values = Object.fromEntries(formData);
@@ -63,23 +74,23 @@ export async function action({ request, params }) {
 
   // Basic validation
   const errors = {};
-  if (!values.name?.trim()) errors.name = "Agency name is required.";
+  if (!values.name?.trim()) errors.name = "Organization name is required.";
   if (!values.email?.trim()) errors.email = "Admin email is required.";
   if (!values.firstName?.trim()) errors.firstName = "First name is required.";
   if (!values.lastName?.trim()) errors.lastName = "Last name is required.";
-  if (values.isBranch && !values.parentId?.trim()) errors.parentId = "Parent Agency ID is required for branches.";
+  if (values.isBranch && !values.parentId?.trim()) errors.parentId = "Parent Organization ID is required for branches.";
 
   if (Object.keys(errors).length > 0) {
     return data({ errors }, { status: 400 });
   }
 
   try {
-    const org = await Agency.findById(params.id);
+    const org = await Organization.findById(params.id);
     if (!org || org.deleted) {
-      return data({ errors: { submit: "Agency not found." } }, { status: 404 });
+      return data({ errors: { submit: "Organization not found." } }, { status: 404 });
     }
 
-    // Update agency fields
+    // Update organization fields
     org.name = values.name.trim();
     org.slug = values.slug?.trim() || values.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     org.status = values.status || "active";
@@ -93,7 +104,7 @@ export async function action({ request, params }) {
 
     const imageFile = formData.get("image");
     if (imageFile && typeof imageFile === "object" && imageFile.size > 0) {
-      const uploadedKey = await uploadAgencyLogo(org._id.toString(), imageFile);
+      const uploadedKey = await uploadOrganizationLogo(org._id.toString(), imageFile);
       if (uploadedKey) {
         org.image = uploadedKey;
       }
@@ -109,6 +120,11 @@ export async function action({ request, params }) {
         admin.lastName = values.lastName?.trim() || admin.lastName;
         admin.phone = values.phone?.trim() || admin.phone;
         admin.addressLine1 = values.addressLine1?.trim() || admin.addressLine1;
+        admin.addressLine2 = values.addressLine2?.trim() || admin.addressLine2;
+        admin.addressLine3 = values.addressLine3?.trim() || admin.addressLine3;
+        admin.city = values.city?.trim() || admin.city;
+        admin.postTown = values.postTown?.trim() || admin.postTown;
+        admin.postcode = values.postcode?.trim() || admin.postcode;
         // Don't update email — that would break their login
         await admin.save();
       }
@@ -116,12 +132,12 @@ export async function action({ request, params }) {
 
     return redirect("/organizations");
   } catch (error) {
-    console.error("Error updating agency:", error);
+    console.error("Error updating organization:", error);
     return data({ errors: { submit: "Failed to update organization. Please try again." } }, { status: 500 });
   }
 }
 
-export default function EditAgencyPage() {
+export default function EditOrganizationPage() {
   const { initialData } = useLoaderData();
   const actionData = useActionData();
   const navigate = useNavigate();
@@ -173,7 +189,7 @@ export default function EditAgencyPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <AgencyForm
+        <OrganizationForm
           initialData={initialData}
           onCancel={() => navigate("/organizations")}
           submitLabel="Update Organization"
