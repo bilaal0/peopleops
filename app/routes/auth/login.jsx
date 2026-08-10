@@ -128,7 +128,7 @@ export default function Login() {
 
           <div className="relative z-10 border-b border-gray-100 px-8 pb-4 pt-8 text-center sm:px-10">
             <div className="mx-auto mb-1.5 flex items-center justify-center">
-              <img src="/assets/logo/proplet.png" alt="Proplet" className="h-14 w-auto object-contain" />
+              <img src="/assets/logo/Peopleops.png" alt="PeopleOps" className="h-14 w-auto object-contain" />
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-indigo-600">Welcome back</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">Sign in</h1>
