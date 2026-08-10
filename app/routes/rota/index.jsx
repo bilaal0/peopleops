@@ -69,25 +69,45 @@ export async function loader({ request }) {
     employeeList,
     staffList: mappedStaff,
     clientList: mappedClients,
-    rotaEvents: rotaEvents.map((e) => ({
-      id: e._id.toString(),
-      title: `${e.startTime} – ${e.endTime}: ${e.employeeName || ""}`,
-      start: e.start ? e.start.toISOString() : e.date?.toISOString(),
-      end: e.end ? e.end.toISOString() : e.date?.toISOString(),
-      color: e.color || "#1e3a5f",
-      extendedProps: {
-        description: e.description || "",
-        employeeId: e.employee?._id?.toString() || "",
-        employeeName: e.employeeName || "",
-        assignedToId: e.assignedTo?._id?.toString() || "",
-        assignedToName: e.assignedToName || "",
-        startTime: e.startTime,
-        endTime: e.endTime,
-        repeat: e.repeat,
-        repeatCount: e.repeatCount,
-        date: e.date?.toISOString(),
-      },
-    })),
+    rotaEvents: rotaEvents.map((e) => {
+      // Extract YYYY-MM-DD from the stored `date` field (local midnight).
+      // This is the canonical user-entered date — most reliable source for the
+      // calendar date cell regardless of UTC offset or DST edge cases.
+      const toLocalDateOnly = (d) => {
+        if (!d) return null;
+        const dt = new Date(d);
+        const yyyy = dt.getFullYear();
+        const mm   = String(dt.getMonth() + 1).padStart(2, "0");
+        const dd   = String(dt.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      // Use the date field as the authoritative calendar date.
+      // Then append the HH:MM strings directly — no UTC conversion involved.
+      const calDate = toLocalDateOnly(e.date || e.start);
+      const startStr = calDate && e.startTime ? `${calDate}T${e.startTime}:00` : calDate;
+      const endStr   = calDate && e.endTime   ? `${calDate}T${e.endTime}:00`   : calDate;
+
+      return {
+        id:    e._id.toString(),
+        title: `${e.startTime} – ${e.endTime}: ${e.employeeName || ""}`,
+        start: startStr,
+        end:   endStr,
+        color: e.color || "#1e3a5f",
+        extendedProps: {
+          description:    e.description    || "",
+          employeeId:     e.employee?._id?.toString() || "",
+          employeeName:   e.employeeName   || "",
+          assignedToId:   e.assignedTo?._id?.toString() || "",
+          assignedToName: e.assignedToName || "",
+          startTime:      e.startTime,
+          endTime:        e.endTime,
+          repeat:         e.repeat,
+          repeatCount:    e.repeatCount,
+          date:           toLocalDateOnly(e.date),
+        },
+      };
+    }),
   };
 }
 
@@ -133,17 +153,28 @@ export async function action({ request }) {
   const employeeName   = employee ? `${employee.firstName || ""} ${employee.lastName || ""}`.trim() : "";
   const assignedToName = client   ? `${client.firstName || ""} ${client.lastName || ""}`.trim()   : "";
 
-  const baseDate = new Date(dateRaw);
-  const buildStartEnd = (d) => ({
-    start: new Date(`${d.toISOString().split("T")[0]}T${startTime}:00.000Z`),
-    end:   new Date(`${d.toISOString().split("T")[0]}T${endTime}:00.000Z`),
-  });
+  // Parse YYYY-MM-DD as LOCAL midnight — new Date("YYYY-MM-DD") is UTC midnight
+  // which shifts to the previous day in timezones ahead of UTC (e.g. UTC+5).
+  const [yr, mo, dy] = dateRaw.split("-").map(Number);
+  const baseDate = new Date(yr, mo - 1, dy); // local midnight, correct date
+  const buildStartEnd = (d) => {
+    // Use local year/month/day to avoid UTC offset shifting the date
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, "0");
+    const dd   = String(d.getDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    return {
+      start: new Date(`${dateStr}T${startTime}:00`),
+      end:   new Date(`${dateStr}T${endTime}:00`),
+    };
+  };
 
   // ── UPDATE ──────────────────────────────────────────────────────────────────
   if (intent === "update") {
     const id = formData.get("id");
     const { start, end } = buildStartEnd(baseDate);
 
+    // Always update the event being edited (occurrence 0)
     await Rota.findByIdAndUpdate(id, {
       date: baseDate,
       startTime,
@@ -152,12 +183,37 @@ export async function action({ request }) {
       end,
       description,
       repeat,
-      repeatCount,
+      repeatCount: repeat === "none" ? 0 : repeatCount,
       employee: employeeId,
       employeeName,
       assignedTo: assignedToId || undefined,
       assignedToName,
     });
+
+    // If a repeat is set, generate the additional occurrences (i = 1 … repeatCount-1)
+    if (repeat !== "none" && repeatCount > 1) {
+      const additionalEvents = [];
+      for (let i = 1; i < repeatCount; i++) {
+        const d = new Date(baseDate);
+        if      (repeat === "daily")       d.setDate(d.getDate() + i);
+        else if (repeat === "weekly")      d.setDate(d.getDate() + i * 7);
+        else if (repeat === "fortnightly") d.setDate(d.getDate() + i * 14);
+        else if (repeat === "monthly")     d.setMonth(d.getMonth() + i);
+
+        const { start: s, end: en } = buildStartEnd(d);
+        additionalEvents.push({
+          date: d, startTime, endTime, start: s, end: en, description,
+          repeat: "none",
+          repeatCount: 0,
+          employee: employeeId, employeeName,
+          assignedTo: assignedToId || undefined, assignedToName,
+          agencyId: currentUser.agencyId || null,
+          addedBy: currentUser.userId,
+          color: "#1e3a5f",
+        });
+      }
+      await Rota.insertMany(additionalEvents);
+    }
 
     return { success: true };
   }

@@ -56,9 +56,16 @@ export default function UKDateInput({
   }, [isControlled, onChange, name]);
 
   const handleDateChange = useCallback((selectedDates) => {
-    const isoDate = selectedDates?.[0]
-      ? selectedDates[0].toISOString().split("T")[0]
-      : "";
+    let isoDate = "";
+    if (selectedDates?.[0]) {
+      const d = selectedDates[0];
+      // Use local date parts — toISOString() is UTC and shifts the date back
+      // by 1 day for timezones ahead of UTC (e.g. UTC+5).
+      const yyyy = d.getFullYear();
+      const mm   = String(d.getMonth() + 1).padStart(2, "0");
+      const dd   = String(d.getDate()).padStart(2, "0");
+      isoDate = `${yyyy}-${mm}-${dd}`;
+    }
     emitValue(isoDate);
   }, [emitValue]);
 

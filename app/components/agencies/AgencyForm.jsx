@@ -12,7 +12,6 @@ export default function AgencyForm({
   serverErrors = {} 
 }) {
   // Only keep state for UI logic (conditional rendering) + Image Preview
-  const [isBranch, setIsBranch] = useState(initialData.isBranch || false);
   const [imagePreview, setImagePreview] = useState(() => getAgencyLogoUrl(initialData.image));
   
   useEffect(() => {
@@ -47,9 +46,9 @@ export default function AgencyForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {/* Left Column: Basic Info & Logo */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
              <h3 className="text-xl font-semibold text-gray-900 border-b pb-2 mb-4">Agency Details</h3>
              
              {/* Logo Upload - Moved to top */}
@@ -223,96 +222,7 @@ export default function AgencyForm({
             </div>
         </div>
 
-        {/* Right Column: Settings & Limits */}
-        <div className="lg:col-span-1 space-y-6 bg-gray-50 p-6 rounded-lg h-fit">
-            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-4">Configuration</h3>
-            
-            {/* Branch Logic */}
-            <div>
-                 <div className="flex items-center mb-3">
-                    <input
-                        type="checkbox"
-                        id="isBranch"
-                        name="isBranch"
-                        checked={isBranch}
-                        onChange={(e) => setIsBranch(e.target.checked)}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="isBranch" className="ml-2 block text-sm text-gray-900 font-medium">
-                        Is this a Branch Office?
-                    </label>
-                </div>
-                
-                {isBranch && (
-                    <div className="mb-4 animate-fade-in-down">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Parent Agency ID <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="parentId"
-                            defaultValue={initialData.parentId}
-                            placeholder="Agency ID"
-                            className={`block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                            errors.parentId ? "border-red-500" : "border-gray-300"
-                            }`}
-                        />
-                        {errors.parentId && <p className="mt-1 text-sm text-red-600">{errors.parentId}</p>}
-                    </div>
-                )}
-            </div>
 
-            {/* Plan Tier */}
-            <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Plan Tier</label>
-                  <select
-                      name="planTier"
-                      defaultValue={initialData.plan?.tier || "free"}
-                      className="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                      <option value="free">Free</option>
-                      <option value="pro">Pro</option>
-                      <option value="enterprise">Enterprise</option>
-                  </select>
-            </div>
-
-            <div className="space-y-4 pt-2">
-                <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Property Limit</label>
-                    <input
-                        type="number"
-                        name="propertyLimit"
-                        defaultValue={initialData.plan?.propertyLimit ?? 5}
-                        min="0"
-                        className="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                     {errors.propertyLimit && <p className="mt-1 text-sm text-red-600">{errors.propertyLimit}</p>}
-                </div>
-                <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">User Limit</label>
-                    <input
-                        type="number"
-                        name="userLimit"
-                        defaultValue={initialData.plan?.userLimit ?? 2}
-                        min="0"
-                        className="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                     {errors.userLimit && <p className="mt-1 text-sm text-red-600">{errors.userLimit}</p>}
-                </div>
-                <div className="flex items-center pt-2">
-                    <input
-                        type="checkbox"
-                        id="canCreateBranches"
-                        name="canCreateBranches"
-                        defaultChecked={initialData.plan?.canCreateBranches || false}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="canCreateBranches" className="ml-2 block text-sm text-gray-900">
-                        Can Create Branches?
-                    </label>
-                </div>
-            </div>
-        </div>
       </div>
 
       {/* Form Actions */}

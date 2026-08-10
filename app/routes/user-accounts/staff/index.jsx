@@ -34,8 +34,8 @@ export async function loader({ request }) {
       jobTitle: u.jobTitle || "",
       roles: u.roles || [],
       status: u.status ?? 1,
-      joiningDate: u.joiningDate ? new Date(u.joiningDate).toLocaleDateString() : "—",
-      createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
+      joiningDate: u.joiningDate ? new Date(u.joiningDate).toLocaleDateString("en-GB") : "—",
+      createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB") : "—",
     })),
   };
 }

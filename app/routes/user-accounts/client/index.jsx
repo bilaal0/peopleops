@@ -36,7 +36,7 @@ export async function loader({ request }) {
       companyName: u.landlordData?.companyName || "",
       companyNumber: u.landlordData?.companyNumber || "",
       status: u.status ?? 1,
-      createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
+      createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB") : "—",
     })),
   };
 }

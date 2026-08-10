@@ -302,7 +302,7 @@ export default function StaffDetailPage() {
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><dt className="text-gray-500 text-xs">Job Title</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.jobTitle || "—"}</dd></div>
                   <div><dt className="text-gray-500 text-xs">Position</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.positionInCompany || "—"}</dd></div>
-                  <div><dt className="text-gray-500 text-xs">Joining Date</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.joiningDate ? new Date(staff.joiningDate).toLocaleDateString() : "—"}</dd></div>
+                  <div><dt className="text-gray-500 text-xs">Joining Date</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.joiningDate ? new Date(staff.joiningDate).toLocaleDateString("en-GB") : "—"}</dd></div>
                   <div><dt className="text-gray-500 text-xs">Gender</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.gender || "—"}</dd></div>
                 </dl>
               </div>
@@ -321,7 +321,7 @@ export default function StaffDetailPage() {
               <div className="space-y-3 text-sm">
                 <div><span className="text-xs text-gray-500 block">System User ID</span><span className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block mt-1 break-all">{staff._id}</span></div>
                 <div><span className="text-xs text-gray-500 block">Telephone Number</span><span className="font-medium text-gray-900">{staff.phone || staff.telephoneNo || "—"}</span></div>
-                <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{staff.createdAt ? new Date(staff.createdAt).toLocaleDateString() : "—"}</span></div>
+                <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{staff.createdAt ? new Date(staff.createdAt).toLocaleDateString("en-GB") : "—"}</span></div>
               </div>
             </div>
           </div>

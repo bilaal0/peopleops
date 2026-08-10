@@ -330,7 +330,7 @@ export default function ClientDetailPage() {
               <div className="space-y-3 text-sm">
                 <div><span className="text-xs text-gray-500 block">System User ID</span><span className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block mt-1 break-all">{client._id}</span></div>
                 <div><span className="text-xs text-gray-500 block">Telephone Number</span><span className="font-medium text-gray-900">{client.phone || client.telephoneNo || "—"}</span></div>
-                <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{client.createdAt ? new Date(client.createdAt).toLocaleDateString() : "—"}</span></div>
+                <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{client.createdAt ? new Date(client.createdAt).toLocaleDateString("en-GB") : "—"}</span></div>
               </div>
             </div>
           </div>

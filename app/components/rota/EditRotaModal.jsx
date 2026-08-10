@@ -155,7 +155,7 @@ export default function EditRotaModal({ event, employeeList = [], assignedToList
             disabled={isSubmitting}
             className="px-6 py-2 rounded-lg bg-[#1e3a5f] text-white text-sm font-semibold hover:bg-[#162d4a] disabled:opacity-60 transition cursor-pointer"
           >
-            {isSubmitting ? "Saving..." : "Save Changes"}
+            {isSubmitting ? "Updating..." : "Update"}
           </button>
           <button
             type="button" onClick={onClose}

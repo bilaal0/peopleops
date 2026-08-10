@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { useRevalidator } from "react-router";
 import AddRotaModal from "./AddRotaModal.jsx";
 import EditRotaModal from "./EditRotaModal.jsx";
 
 export default function RotaCalendar({ employeeList, staffList, clientList, rotaEvents, serverError }) {
+  const { revalidate } = useRevalidator();
   const calendarElRef = useRef(null);
   const calendarRef   = useRef(null);
 
@@ -72,30 +74,51 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
           setTitle(info.view.title);
         },
 
-        // Custom event rendering for calendar views only
+        // Custom event rendering for both calendar and list views
         eventContent: (arg) => {
-          // List views render their own rows — skip custom content
-          if (arg.view.type.startsWith("list")) return true;
-
           const props = arg.event.extendedProps || {};
           const time  = fmt12(props.startTime || "");
           const name  = props.employeeName || props.assignedToName || arg.event.title || "";
+          const desc  = props.description || "";
           const bg    = arg.event.backgroundColor || arg.event.color || "#1e3a5f";
 
+          // ── List view: custom row with description ──
+          if (arg.view.type.startsWith("list")) {
+            const cell = document.createElement("div");
+            cell.style.cssText = "display:flex;flex-direction:column;gap:2px;padding:2px 0;";
+
+            const top = document.createElement("span");
+            top.style.cssText = "font-size:13px;font-weight:600;color:#1e293b;";
+            top.textContent = time ? `${time}  ${name}` : name;
+
+            cell.appendChild(top);
+
+            if (desc) {
+              const sub = document.createElement("span");
+              sub.style.cssText = "font-size:11.5px;color:#64748b;font-style:italic;";
+              sub.textContent = desc;
+              cell.appendChild(sub);
+            }
+
+            return { domNodes: [cell] };
+          }
+
+          // ── Calendar (month/week/day) pill ──
           const wrapper = document.createElement("div");
           wrapper.style.cssText = [
             "display:flex",
-            "align-items:center",
-            "gap:5px",
+            "flex-direction:column",
             `background:${bg}`,
             "border-radius:4px",
             "padding:2px 6px",
             "cursor:pointer",
             "overflow:hidden",
-            "white-space:nowrap",
             "width:100%",
             "box-sizing:border-box",
           ].join(";");
+
+          const topRow = document.createElement("div");
+          topRow.style.cssText = "display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;";
 
           const dot = document.createElement("span");
           dot.style.cssText =
@@ -106,8 +129,17 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
             "font-size:11.5px;font-weight:500;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
           text.textContent = time ? `${time} ${name}` : name;
 
-          wrapper.appendChild(dot);
-          wrapper.appendChild(text);
+          topRow.appendChild(dot);
+          topRow.appendChild(text);
+          wrapper.appendChild(topRow);
+
+          if (desc) {
+            const descEl = document.createElement("span");
+            descEl.style.cssText =
+              "font-size:10px;color:rgba(255,255,255,0.8);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;";
+            descEl.textContent = desc;
+            wrapper.appendChild(descEl);
+          }
 
           return { domNodes: [wrapper] };
         },
@@ -126,10 +158,13 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
   }, []);
 
   // ── Sync events whenever rotaEvents changes ────────────────────────────────
+  // Remove ALL event sources (not just events) before adding the fresh list.
+  // removeAllEvents() only clears event objects but leaves sources, causing
+  // duplicate sources to stack up silently on every sync.
   useEffect(() => {
     const cal = calendarRef.current;
     if (!cal) return;
-    cal.removeAllEvents();
+    cal.getEventSources().forEach((src) => src.remove());
     cal.addEventSource(rotaEvents);
   }, [rotaEvents]);
 
@@ -236,7 +271,7 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
           defaultDate={selectedDate}
           serverError={serverError}
           onClose={() => setShowAddModal(false)}
-          onSuccess={() => setShowAddModal(false)}
+          onSuccess={() => { setShowAddModal(false); revalidate(); }}
         />
       )}
 
@@ -247,7 +282,7 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
           employeeList={clientList}
           assignedToList={staffList}
           onClose={() => setEditingEvent(null)}
-          onSuccess={() => setEditingEvent(null)}
+          onSuccess={() => { setEditingEvent(null); revalidate(); }}
         />
       )}
     </div>

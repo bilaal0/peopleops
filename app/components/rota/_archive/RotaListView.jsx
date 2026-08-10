@@ -46,10 +46,10 @@ export default function RotaListView({ rotaEvents, onEdit }) {
       const pa = a.extendedProps || {};
       const pb = b.extendedProps || {};
       let va, vb;
-      if (sortKey === "start")        { va = a.start; vb = b.start; }
+      if (sortKey === "start") { va = a.start; vb = b.start; }
       else if (sortKey === "employee") { va = pa.employeeName || ""; vb = pb.employeeName || ""; }
       else if (sortKey === "assigned") { va = pa.assignedToName || ""; vb = pb.assignedToName || ""; }
-      else                            { va = pa.startTime || ""; vb = pb.startTime || ""; }
+      else { va = pa.startTime || ""; vb = pb.startTime || ""; }
       if (va < vb) return sortDir === "asc" ? -1 : 1;
       if (va > vb) return sortDir === "asc" ? 1 : -1;
       return 0;
