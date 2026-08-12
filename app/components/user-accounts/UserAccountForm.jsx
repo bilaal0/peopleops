@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Form } from "react-router";
 import UKAddressFields from "../ui/UKAddressFields.jsx";
+import UKDateInput from "../ui/UKDateInput.jsx";
 
 export default function UserAccountForm({
   accountType = "staff", // "staff" | "client"
@@ -45,32 +46,8 @@ export default function UserAccountForm({
             </div>
           </div>
 
-          {/* 1. Role */}
-          <div>
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-              Role <span className="text-red-500">*</span>
-            </h3>
-            <input type="hidden" name="status" value={initialData?.status ?? 1} />
-            <div className="max-w-md">
-              <label className={labelClass}>
-                Select Role <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="role"
-                required
-                defaultValue={initialData?.roles?.[0] || ""}
-                className={inputClass}
-              >
-                <option value="" disabled>Select Role</option>
-                <option value="EMPLOYEE">Employee</option>
-                <option value="REGISTERED_MANAGER">Registered Manager</option>
-                <option value="ADMIN">Administrator</option>
-              </select>
-              {serverErrors?.role && <p className="text-[11px] text-red-500 mt-1">{serverErrors.role}</p>}
-            </div>
-          </div>
-
-          <hr className="border-slate-100" />
+          <input type="hidden" name="status" value={initialData?.status ?? 1} />
+          <input type="hidden" name="role" value={initialData?.roles?.[0] || "EMPLOYEE"} />
 
           {/* 2. Personal Information */}
           <div>
@@ -148,11 +125,11 @@ export default function UserAccountForm({
 
               <div>
                 <label className={labelClass}>Joining Date</label>
-                <input
-                  type="date"
+                <UKDateInput
                   name="joiningDate"
                   defaultValue={formatDate(initialData?.joiningDate)}
                   className={inputClass}
+                  placeholder="DD/MM/YYYY"
                 />
               </div>
             </div>
@@ -303,28 +280,7 @@ export default function UserAccountForm({
           </div>
         </div>
 
-        <hr className="border-slate-100" />
 
-        {/* 2. Employment Info */}
-        <div>
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
-            Employment Info
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label className={labelClass}>Position / Role in Organization</label>
-              <input
-                type="text"
-                name="positionInCompany"
-                defaultValue={initialData?.positionInCompany || ""}
-                placeholder="e.g. Managing Director"
-                className={inputClass}
-              />
-            </div>
-          </div>
-        </div>
-
-        <hr className="border-slate-100" />
 
         {/* 3. Address Details */}
         <div>

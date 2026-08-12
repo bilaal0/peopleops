@@ -24,6 +24,7 @@ export async function loader({ request }) {
     // Fetch organizations and populate primaryAdmin for display
     // using .lean() to ensure we get plain JS objects, preventing serialization issues
     const organizations = await Organization.find({ deleted: false })
+        .select("_id name slug image status primaryAdmin")
         .populate("primaryAdmin", "email firstName lastName emailVerified inviteToken inviteExpires") // Include invite fields
         .sort({ createdAt: -1 })
         .lean();
@@ -202,12 +203,6 @@ export default function OrganizationsPage() {
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Status
                                     </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Plan Tier
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Limits
-                                    </th>
                                     <th scope="col" className="relative px-6 py-3">
                                         <span className="sr-only">Actions</span>
                                     </th>
@@ -266,15 +261,6 @@ export default function OrganizationsPage() {
                                                     {org.status ? org.status.toUpperCase() : "UNKNOWN"}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                                                {org.plan?.tier || "Free"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <div className="flex flex-col text-xs">
-                                                    <span>Props: {org.plan?.propertyLimit}</span>
-                                                    <span>Users: {org.plan?.userLimit}</span>
-                                                </div>
-                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex justify-end gap-3">
                                                     {org.primaryAdmin && !org.primaryAdmin.emailVerified && (
@@ -311,7 +297,7 @@ export default function OrganizationsPage() {
                                         </tr>
                                     ))) : (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-12 text-center text-gray-500 text-sm">
+                                        <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-sm">
                                             No organizations found. Click "Add Organization" to create one.
                                         </td>
                                     </tr>

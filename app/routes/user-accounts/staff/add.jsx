@@ -17,7 +17,7 @@ export async function action({ request }) {
   await connect();
 
   const formData = await request.formData();
-  const role = formData.get("role")?.toString().trim();
+  const role = formData.get("role")?.toString().trim() || "EMPLOYEE";
   const statusRaw = formData.get("status");
   const status = statusRaw !== null && statusRaw !== "" ? Number(statusRaw) : 1;
 
@@ -40,7 +40,6 @@ export async function action({ request }) {
   const phone = formData.get("phone")?.toString().trim();
 
   const errors = {};
-  if (!role) errors.role = "Role is required.";
   if (statusRaw === null || statusRaw === "") errors.status = "Status is required.";
   if (!firstName) errors.firstName = "First name is required.";
   if (!lastName) errors.lastName = "Surname is required.";

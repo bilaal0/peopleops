@@ -3,6 +3,7 @@ import { redirect, useLoaderData, useNavigate, Link, Form, useFetcher } from "re
 import { getUserFromRequest } from "../../../utils/auth.server.js";
 import { User } from "../../../models/user.server.js";
 import { Document } from "../../../models/document.server.js";
+import { DocumentType } from "../../../models/documentType.server.js";
 import { connect } from "../../../config/db.server.js";
 import { fmtDate } from "../../../utils/date.js";
 import UKDateInput from "../../../components/ui/UKDateInput.jsx";
@@ -25,6 +26,8 @@ export async function loader({ params, request }) {
     .sort({ createdAt: -1 })
     .lean();
 
+  const docTypes = await DocumentType.find({ isActive: true }).sort({ name: 1 }).lean();
+
   return {
     client: {
       ...clientUser,
@@ -42,6 +45,7 @@ export async function loader({ params, request }) {
       notes:      d.notes || null,
       createdAt:  d.createdAt,
     })),
+    documentTypes: docTypes.map(dt => ({ _id: dt._id.toString(), name: dt.name })),
     organizationId: user.organizationId?.toString() || null,
   };
 }
@@ -86,7 +90,7 @@ function DocDeleteButton({ documentId }) {
 }
 
 // ── Upload modal ──────────────────────────────────────────────────────────────
-function UploadModal({ clientId, organizationId, onClose }) {
+function UploadModal({ clientId, organizationId, documentTypes, onClose }) {
   const fetcher = useFetcher();
   const fileRef = useRef(null);
   const [fileName, setFileName] = useState("");
@@ -124,20 +128,19 @@ function UploadModal({ clientId, organizationId, onClose }) {
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Title <span className="text-slate-400 font-normal">(optional)</span></label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Document Name <span className="text-slate-400 font-normal">(optional)</span></label>
             <input type="text" name="title" placeholder="e.g. Care Plan" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition" />
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Issue Date</label>
-              <UKDateInput name="issueDate" placeholder="DD/MM/YYYY" className="rounded-lg border-slate-200 text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Expiry Date</label>
-              <UKDateInput name="expiryDate" placeholder="DD/MM/YYYY" className="rounded-lg border-slate-200 text-sm" />
-            </div>
+          {/* Group */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Group</label>
+            <select name="docType" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition bg-white" required>
+              <option value="">Select a group...</option>
+              {documentTypes.map(dt => (
+                <option key={dt._id} value={dt._id}>{dt.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Notes */}
@@ -162,7 +165,7 @@ function UploadModal({ clientId, organizationId, onClose }) {
 }
 
 // ── Documents tab panel ───────────────────────────────────────────────────────
-function DocumentsPanel({ documents, clientId, organizationId }) {
+function DocumentsPanel({ documents, clientId, organizationId, documentTypes }) {
   const [showUpload, setShowUpload] = useState(false);
 
   return (
@@ -211,14 +214,14 @@ function DocumentsPanel({ documents, clientId, organizationId }) {
         </div>
       )}
 
-      {showUpload && <UploadModal clientId={clientId} organizationId={organizationId} onClose={() => setShowUpload(false)} />}
+      {showUpload && <UploadModal clientId={clientId} organizationId={organizationId} documentTypes={documentTypes} onClose={() => setShowUpload(false)} />}
     </div>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ClientDetailPage() {
-  const { client, documents, organizationId } = useLoaderData();
+  const { client, documents, organizationId, documentTypes } = useLoaderData();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -281,64 +284,53 @@ export default function ClientDetailPage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {activeTab === "profile" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Info Card */}
-            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-6">
-              <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 font-bold text-2xl flex items-center justify-center border border-emerald-200">
-                  {client.firstName?.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">{fullName}</h2>
-                  <p className="text-sm text-gray-500">{client.email}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${isCompany ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}>
-                      {isCompany ? "Company Client" : "Individual Client"}
-                    </span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${client.status === 1 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
-                      {client.status === 1 ? "Active Account" : "Inactive Account"}
-                    </span>
-                  </div>
-                </div>
+          <div className="max-w-4xl bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-6">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 font-bold text-2xl flex items-center justify-center border border-emerald-200">
+                {client.firstName?.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Client Overview</h3>
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div><dt className="text-gray-500 text-xs">Position / Role</dt><dd className="font-medium text-gray-900 mt-0.5">{client.positionInCompany || "—"}</dd></div>
-                  {isCompany && (
-                    <>
-                      <div><dt className="text-gray-500 text-xs">Company Name</dt><dd className="font-medium text-gray-900 mt-0.5">{client.landlordData?.companyName || "—"}</dd></div>
-                      <div><dt className="text-gray-500 text-xs">Company Number</dt><dd className="font-medium text-gray-900 mt-0.5">{client.landlordData?.companyNumber || "—"}</dd></div>
-                    </>
-                  )}
-                  <div><dt className="text-gray-500 text-xs">Ethnicity</dt><dd className="font-medium text-gray-900 mt-0.5">{client.ethnicity || "—"}</dd></div>
-                  <div><dt className="text-gray-500 text-xs">Gender</dt><dd className="font-medium text-gray-900 mt-0.5">{client.gender || "—"}</dd></div>
-                </dl>
-              </div>
-              <div className="pt-6 border-t border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Address Information</h3>
-                <p className="text-sm text-gray-700">
-                  {client.addressLine1 ? (
-                    <>{client.addressLine1}{client.addressLine2 && <><br />{client.addressLine2}</>}{(client.postTown || client.city) && <><br />{client.postTown || client.city}</>}{client.postcode && <><br />{client.postcode}</>}</>
-                  ) : <span className="text-gray-400 italic">No address provided.</span>}
-                </p>
+                <h2 className="text-xl font-bold text-gray-900">{fullName}</h2>
+                <p className="text-sm text-gray-500">{client.email}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${isCompany ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}>
+                    {isCompany ? "Company Client" : "Individual Client"}
+                  </span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${client.status === 1 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
+                    {client.status === 1 ? "Active Account" : "Inactive Account"}
+                  </span>
+                </div>
               </div>
             </div>
-            {/* Sidebar */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-4 h-fit">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider pb-2 border-b border-gray-100">Account Metadata</h3>
-              <div className="space-y-3 text-sm">
-                <div><span className="text-xs text-gray-500 block">System User ID</span><span className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block mt-1 break-all">{client._id}</span></div>
-                <div><span className="text-xs text-gray-500 block">Telephone Number</span><span className="font-medium text-gray-900">{client.phone || client.telephoneNo || "—"}</span></div>
-                <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{client.createdAt ? new Date(client.createdAt).toLocaleDateString("en-GB") : "—"}</span></div>
-              </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Client Overview</h3>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-sm">
+                <div><dt className="text-gray-500 text-xs mb-1">Email Address</dt><dd className="font-medium text-gray-900 break-all">{client.email}</dd></div>
+                <div><dt className="text-gray-500 text-xs mb-1">Telephone Number</dt><dd className="font-medium text-gray-900">{client.phone || client.telephoneNo || "—"}</dd></div>
+                {isCompany && (
+                  <>
+                    <div><dt className="text-gray-500 text-xs mb-1">Company Name</dt><dd className="font-medium text-gray-900">{client.landlordData?.companyName || "—"}</dd></div>
+                    <div><dt className="text-gray-500 text-xs mb-1">Company Number</dt><dd className="font-medium text-gray-900">{client.landlordData?.companyNumber || "—"}</dd></div>
+                  </>
+                )}
+                <div><dt className="text-gray-500 text-xs mb-1">Created On</dt><dd className="font-medium text-gray-900">{client.createdAt ? new Date(client.createdAt).toLocaleDateString("en-GB") : "—"}</dd></div>
+                
+                <div className="sm:col-span-2 md:col-span-3 pt-4 mt-2 border-t border-gray-100">
+                  <dt className="text-gray-500 text-xs mb-1">Address</dt>
+                  <dd className="font-medium text-gray-900 leading-relaxed">
+                    {client.addressLine1 ? (
+                      <>{client.addressLine1}{client.addressLine2 && <>, {client.addressLine2}</>}{(client.postTown || client.city) && <>, {client.postTown || client.city}</>}{client.postcode && <>, {client.postcode}</>}</>
+                    ) : <span className="text-gray-400 italic">No address provided.</span>}
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
         )}
 
         {activeTab === "documents" && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs">
-            <DocumentsPanel documents={documents} clientId={client._id} organizationId={organizationId} />
+            <DocumentsPanel documents={documents} clientId={client._id} organizationId={organizationId} documentTypes={documentTypes} />
           </div>
         )}
       </div>

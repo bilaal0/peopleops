@@ -3,6 +3,7 @@ import { redirect, useLoaderData, useNavigate, Link, Form, useFetcher } from "re
 import { getUserFromRequest } from "../../../utils/auth.server.js";
 import { User } from "../../../models/user.server.js";
 import { Document } from "../../../models/document.server.js";
+import { DocumentType } from "../../../models/documentType.server.js";
 import { connect } from "../../../config/db.server.js";
 import { fmtDate } from "../../../utils/date.js";
 import UKDateInput from "../../../components/ui/UKDateInput.jsx";
@@ -25,6 +26,8 @@ export async function loader({ params, request }) {
     .sort({ createdAt: -1 })
     .lean();
 
+  const docTypes = await DocumentType.find({ isActive: true }).sort({ name: 1 }).lean();
+
   return {
     staff: {
       ...staffUser,
@@ -42,6 +45,7 @@ export async function loader({ params, request }) {
       notes:     d.notes || null,
       createdAt: d.createdAt,
     })),
+    documentTypes: docTypes.map(dt => ({ _id: dt._id.toString(), name: dt.name })),
     organizationId: user.organizationId?.toString() || null,
   };
 }
@@ -86,7 +90,7 @@ function DocDeleteButton({ documentId }) {
 }
 
 // ── Upload modal ──────────────────────────────────────────────────────────────
-function UploadModal({ staffId, organizationId, onClose }) {
+function UploadModal({ staffId, organizationId, documentTypes, onClose }) {
   const fetcher = useFetcher();
   const fileRef = useRef(null);
   const [fileName, setFileName] = useState("");
@@ -124,20 +128,19 @@ function UploadModal({ staffId, organizationId, onClose }) {
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Title <span className="text-slate-400 font-normal">(optional)</span></label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Document Name <span className="text-slate-400 font-normal">(optional)</span></label>
             <input type="text" name="title" placeholder="e.g. DBS Certificate" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition" />
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Issue Date</label>
-              <UKDateInput name="issueDate" placeholder="DD/MM/YYYY" className="rounded-lg border-slate-200 text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Expiry Date</label>
-              <UKDateInput name="expiryDate" placeholder="DD/MM/YYYY" className="rounded-lg border-slate-200 text-sm" />
-            </div>
+          {/* Group */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Group</label>
+            <select name="docType" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition bg-white" required>
+              <option value="">Select a group...</option>
+              {documentTypes.map(dt => (
+                <option key={dt._id} value={dt._id}>{dt.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Notes */}
@@ -162,7 +165,7 @@ function UploadModal({ staffId, organizationId, onClose }) {
 }
 
 // ── Documents tab panel ───────────────────────────────────────────────────────
-function DocumentsPanel({ documents, staffId, organizationId }) {
+function DocumentsPanel({ documents, staffId, organizationId, documentTypes }) {
   const [showUpload, setShowUpload] = useState(false);
 
   return (
@@ -211,14 +214,14 @@ function DocumentsPanel({ documents, staffId, organizationId }) {
         </div>
       )}
 
-      {showUpload && <UploadModal staffId={staffId} organizationId={organizationId} onClose={() => setShowUpload(false)} />}
+      {showUpload && <UploadModal staffId={staffId} organizationId={organizationId} documentTypes={documentTypes} onClose={() => setShowUpload(false)} />}
     </div>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function StaffDetailPage() {
-  const { staff, documents, organizationId } = useLoaderData();
+  const { staff, documents, organizationId, documentTypes } = useLoaderData();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -301,7 +304,6 @@ export default function StaffDetailPage() {
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Employment Details</h3>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><dt className="text-gray-500 text-xs">Job Title</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.jobTitle || "—"}</dd></div>
-                  <div><dt className="text-gray-500 text-xs">Position</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.positionInCompany || "—"}</dd></div>
                   <div><dt className="text-gray-500 text-xs">Joining Date</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.joiningDate ? new Date(staff.joiningDate).toLocaleDateString("en-GB") : "—"}</dd></div>
                   <div><dt className="text-gray-500 text-xs">Gender</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.gender || "—"}</dd></div>
                 </dl>
@@ -317,9 +319,8 @@ export default function StaffDetailPage() {
             </div>
             {/* Sidebar */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-4 h-fit">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider pb-2 border-b border-gray-100">Account Metadata</h3>
               <div className="space-y-3 text-sm">
-                <div><span className="text-xs text-gray-500 block">System User ID</span><span className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block mt-1 break-all">{staff._id}</span></div>
+                <div><span className="text-xs text-gray-500 block">Email Address</span><span className="font-medium text-gray-900 block mt-1 break-all">{staff.email}</span></div>
                 <div><span className="text-xs text-gray-500 block">Telephone Number</span><span className="font-medium text-gray-900">{staff.phone || staff.telephoneNo || "—"}</span></div>
                 <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{staff.createdAt ? new Date(staff.createdAt).toLocaleDateString("en-GB") : "—"}</span></div>
               </div>
@@ -329,7 +330,7 @@ export default function StaffDetailPage() {
 
         {activeTab === "documents" && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs">
-            <DocumentsPanel documents={documents} staffId={staff._id} organizationId={organizationId} />
+            <DocumentsPanel documents={documents} staffId={staff._id} organizationId={organizationId} documentTypes={documentTypes} />
           </div>
         )}
       </div>

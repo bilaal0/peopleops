@@ -147,53 +147,11 @@ export default function UKAddressFields({
         </div>
       )}
 
-      {/* Postcode Lookup Field (Compact Row) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
-        <div className="sm:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 items-start">
+        {/* Address Line 1 */}
+        <div className={showAddressLine2 || showAddressLine3 ? "sm:col-span-2 md:col-span-3" : ""}>
           <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Postcode {requiredFields.postcode && <span className="text-red-500">*</span>}
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              name={names.postcode}
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-              placeholder="e.g. SW1A 1AA"
-              className={`flex-1 rounded-lg border px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white uppercase font-medium transition ${
-                getFieldError("postcode") ? "border-red-300 bg-red-50/50 text-red-900" : "border-slate-300 text-slate-900"
-              }`}
-              required={requiredFields.postcode}
-            />
-            <button
-              type="button"
-              onClick={handlePostcodeLookup}
-              disabled={isLookingUp}
-              className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            >
-              {isLookingUp ? (
-                <>
-                  <svg className="animate-spin h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Checking...</span>
-                </>
-              ) : (
-                <span>Find Address</span>
-              )}
-            </button>
-          </div>
-          {lookupError && <p className="text-[11px] text-amber-600 mt-1">{lookupError}</p>}
-          {getFieldError("postcode") && <p className="text-[11px] text-red-500 mt-1">{getFieldError("postcode")}</p>}
-        </div>
-      </div>
-
-      {/* Address Line 1 & Line 2 Grid */}
-      <div className={showAddressLine2 ? "grid grid-cols-1 sm:grid-cols-2 gap-3.5" : "w-full"}>
-        <div>
-          <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            {showAddressLine2 ? "Address Line 1" : "Address Line"} {requiredFields.addressLine1 && <span className="text-red-500">*</span>}
+            {showAddressLine2 ? "Address Line 1" : "Address"} {requiredFields.addressLine1 && <span className="text-red-500">*</span>}
           </label>
           <input
             type="text"
@@ -209,8 +167,9 @@ export default function UKAddressFields({
           {getFieldError("addressLine1") && <p className="text-[11px] text-red-500 mt-1">{getFieldError("addressLine1")}</p>}
         </div>
 
+        {/* Address Line 2 */}
         {showAddressLine2 && (
-          <div>
+          <div className="sm:col-span-2 md:col-span-3">
             <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
               Address Line 2 <span className="text-slate-400 font-normal">(Optional)</span>
             </label>
@@ -224,16 +183,8 @@ export default function UKAddressFields({
             />
           </div>
         )}
-      </div>
 
-      {/* Line 3, Town/City, County Grid */}
-      <div className={`grid grid-cols-1 ${
-        [showAddressLine3, true, showCounty, showCountry, showUprn].filter(Boolean).length > 2
-          ? "sm:grid-cols-3"
-          : [showAddressLine3, true, showCounty, showCountry, showUprn].filter(Boolean).length === 2
-          ? "sm:grid-cols-2"
-          : "sm:grid-cols-1 max-w-md"
-      } gap-3.5`}>
+        {/* Address Line 3 */}
         {showAddressLine3 && (
           <div>
             <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -250,6 +201,7 @@ export default function UKAddressFields({
           </div>
         )}
 
+        {/* Town / City */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
             Town / City {requiredFields.city && <span className="text-red-500">*</span>}
@@ -273,6 +225,27 @@ export default function UKAddressFields({
           )}
         </div>
 
+        {/* Postcode */}
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Postcode {requiredFields.postcode && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="text"
+            name={names.postcode}
+            value={postcode}
+            onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+            placeholder="e.g. SW1A 1AA"
+            className={`w-full rounded-lg border px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white uppercase font-medium transition ${
+              getFieldError("postcode") ? "border-red-300 bg-red-50/50 text-red-900" : "border-slate-300 text-slate-900"
+            }`}
+            required={requiredFields.postcode}
+          />
+          {lookupError && <p className="text-[11px] text-amber-600 mt-1">{lookupError}</p>}
+          {getFieldError("postcode") && <p className="text-[11px] text-red-500 mt-1">{getFieldError("postcode")}</p>}
+        </div>
+
+        {/* County */}
         {showCounty && (
           <div>
             <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -289,6 +262,7 @@ export default function UKAddressFields({
           </div>
         )}
 
+        {/* Country */}
         {showCountry && (
           <div>
             <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -309,6 +283,7 @@ export default function UKAddressFields({
           </div>
         )}
 
+        {/* UPRN */}
         {showUprn && (
           <div>
             <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">

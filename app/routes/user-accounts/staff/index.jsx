@@ -69,14 +69,40 @@ export default function StaffIndexPage() {
         },
       },
       {
-        accessorKey: "phone",
-        header: "Phone",
-        cell: ({ row }) => row.original.phone || <span className="text-gray-400">—</span>,
-      },
-      {
         accessorKey: "email",
         header: "Email",
         cell: ({ row }) => row.original.email || <span className="text-gray-400">—</span>,
+      },
+      {
+        accessorKey: "phone",
+        header: "Number",
+        cell: ({ row }) => row.original.phone || <span className="text-gray-400">—</span>,
+      },
+      {
+        accessorKey: "jobTitle",
+        header: "Job Title",
+        cell: ({ row }) => row.original.jobTitle || <span className="text-gray-400">—</span>,
+      },
+      {
+        accessorKey: "joiningDate",
+        header: "Joining Date",
+        cell: ({ row }) => row.original.joiningDate || <span className="text-gray-400">—</span>,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const active = row.original.status === 1;
+          return (
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                active ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+              }`}
+            >
+              {active ? "Active" : "Inactive"}
+            </span>
+          );
+        },
       },
       {
         id: "actions",
@@ -86,12 +112,12 @@ export default function StaffIndexPage() {
           return (
             <Link
               to={`/user-accounts/staff/${s._id}`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-slate-900 hover:to-slate-800 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:from-slate-900 hover:to-slate-800 transition-all"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              View
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
-              Edit
             </Link>
           );
         },

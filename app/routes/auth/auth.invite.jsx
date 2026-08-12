@@ -128,12 +128,9 @@ export default function AcceptInvite() {
           style={{ background: "radial-gradient(circle, rgba(99,102,241,0.45) 0%, transparent 70%)" }} />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
-            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
+          <div className="bg-white/90 p-2 rounded-xl backdrop-blur-sm shadow-sm border border-white/50">
+            <img src="/assets/logo/Peopleops.png" alt="PeopleOps" className="h-10 w-auto object-contain drop-shadow-sm" />
           </div>
-          <span className="text-white font-bold text-xl tracking-tight drop-shadow">Proplet</span>
         </div>
 
         <div className="relative z-10">
@@ -142,7 +139,7 @@ export default function AcceptInvite() {
             <span className="text-white/80">starts today.</span>
           </h2>
           <p className="text-indigo-100 text-base leading-relaxed max-w-sm">
-            Set your password to activate your Proplet account and experience the future of property management.
+            Set your password to activate your PeopleOps account and experience the future of HR management.
           </p>
           <div className="mt-8 flex flex-col gap-3">
             {[
@@ -160,20 +157,15 @@ export default function AcceptInvite() {
         </div>
 
         <p className="relative z-10 text-indigo-200/70 text-xs">
-          © {new Date().getFullYear()} AgentShield · Built for UK Letting Compliance
+          © {new Date().getFullYear()} PeopleOps · Built for modern HR
         </p>
       </div>
 
       {/* ── Right panel — form ────────────────────────────── */}
       <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12 sm:px-12">
         {/* Mobile logo */}
-        <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
-            <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
-          </div>
-          <span className="font-bold text-gray-900 text-lg tracking-tight">AgentShield</span>
+        <div className="mb-8 flex items-center justify-center lg:hidden">
+          <img src="/assets/logo/Peopleops.png" alt="PeopleOps" className="h-10 w-auto object-contain" />
         </div>
 
         <div className="w-full max-w-md">

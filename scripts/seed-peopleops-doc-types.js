@@ -1,6 +1,6 @@
 // scripts/seed-peopleops-doc-types.js
 // Run with: node scripts/seed-peopleops-doc-types.js
-// Seeds PeopleOps-relevant document types into the DocumentType collection.
+// Seeds PeopleOps document types into the DocumentType collection using the DocumentType schema.
 import "dotenv/config";
 import mongoose from "mongoose";
 
@@ -10,7 +10,7 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-// ── Inline schema (avoids importing server-only modules) ──────────────────────
+// ── Inline schema matching DocumentType model ─────────────────────────────────
 const documentTypeSchema = new mongoose.Schema(
   {
     key:                  { type: String, required: true, unique: true, trim: true, lowercase: true },
@@ -29,179 +29,71 @@ const documentTypeSchema = new mongoose.Schema(
 const DocumentType =
   mongoose.models.DocumentType || mongoose.model("DocumentType", documentTypeSchema);
 
-// ── Doc types to seed ─────────────────────────────────────────────────────────
-// We need a placeholder createdBy ObjectId
 const SYSTEM_ID = new mongoose.Types.ObjectId("000000000000000000000001");
 
-const TYPES = [
-  // ── Identity & Right to Work ─────────────────────────────────────────────
+export const CATEGORIES = [
   {
-    key: "passport",
-    name: "Passport",
-    entity: ["general"],
-    category: "identity",
-    hasExpiry: true,
-    expiryDays: null,
-    requiresVerification: true,
-  },
-  {
-    key: "national_id",
-    name: "National ID Card",
-    entity: ["general"],
-    category: "identity",
-    hasExpiry: true,
-    expiryDays: null,
-    requiresVerification: true,
-  },
-  {
-    key: "right_to_work",
-    name: "Right to Work Evidence",
-    entity: ["general"],
-    category: "compliance",
-    hasExpiry: true,
-    expiryDays: null,
-    requiresVerification: true,
-  },
-  {
-    key: "visa",
-    name: "Visa / Work Permit",
-    entity: ["general"],
-    category: "identity",
-    hasExpiry: true,
-    expiryDays: null,
-    requiresVerification: true,
-  },
-  {
-    key: "biometric_residence_permit",
-    name: "Biometric Residence Permit (BRP)",
-    entity: ["general"],
-    category: "identity",
-    hasExpiry: true,
-    expiryDays: null,
-    requiresVerification: true,
-  },
-
-  // ── DBS & Safeguarding ────────────────────────────────────────────────────
-  {
-    key: "dbs_basic",
-    name: "DBS Check — Basic",
-    entity: ["general"],
-    category: "compliance",
-    hasExpiry: true,
-    expiryDays: 1095, // 3 years
-    requiresVerification: true,
-  },
-  {
-    key: "dbs_standard",
-    name: "DBS Check — Standard",
-    entity: ["general"],
-    category: "compliance",
-    hasExpiry: true,
-    expiryDays: 1095,
-    requiresVerification: true,
-  },
-  {
-    key: "dbs_enhanced",
-    name: "DBS Check — Enhanced",
-    entity: ["general"],
-    category: "compliance",
-    hasExpiry: true,
-    expiryDays: 1095,
-    requiresVerification: true,
-  },
-
-  // ── Qualifications & Training ─────────────────────────────────────────────
-  {
-    key: "driving_licence",
-    name: "Driving Licence",
-    entity: ["general"],
-    category: "licence",
-    hasExpiry: true,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "nvq_certificate",
-    name: "NVQ / QCF Certificate",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "first_aid_certificate",
-    name: "First Aid Certificate",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: true,
-    expiryDays: 1095, // 3 years
-    requiresVerification: false,
-  },
-  {
-    key: "manual_handling_certificate",
-    name: "Manual Handling Certificate",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: true,
-    expiryDays: 365,
-    requiresVerification: false,
-  },
-  {
-    key: "medication_training",
-    name: "Medication Administration Training",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: true,
-    expiryDays: 365,
-    requiresVerification: false,
-  },
-  {
-    key: "safeguarding_certificate",
-    name: "Safeguarding Training Certificate",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: true,
-    expiryDays: 730, // 2 years
-    requiresVerification: false,
-  },
-  {
-    key: "moving_handling_certificate",
-    name: "Moving & Handling Certificate",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: true,
-    expiryDays: 365,
-    requiresVerification: false,
-  },
-  {
-    key: "food_hygiene_certificate",
-    name: "Food Hygiene Certificate",
-    entity: ["general"],
-    category: "certificate",
-    hasExpiry: true,
-    expiryDays: 1095,
-    requiresVerification: false,
-  },
-
-  // ── Employment & HR ───────────────────────────────────────────────────────
-  {
-    key: "employment_contract",
-    name: "Employment Contract",
-    entity: ["general"],
-    category: "legal",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "job_description",
-    name: "Job Description",
+    key: "cv",
+    name: "CV",
     entity: ["general"],
     category: "general",
     hasExpiry: false,
     expiryDays: null,
     requiresVerification: false,
+  },
+  {
+    key: "job_application",
+    name: "Job Application",
+    entity: ["general"],
+    category: "general",
+    hasExpiry: false,
+    expiryDays: null,
+    requiresVerification: false,
+  },
+  {
+    key: "interview_details",
+    name: "Interview Details",
+    entity: ["general"],
+    category: "general",
+    hasExpiry: false,
+    expiryDays: null,
+    requiresVerification: false,
+  },
+  {
+    key: "passport_copy",
+    name: "Passport Copy",
+    entity: ["general"],
+    category: "identity",
+    hasExpiry: true,
+    expiryDays: null,
+    requiresVerification: true,
+  },
+  {
+    key: "ielts",
+    name: "IELTS",
+    entity: ["general"],
+    category: "certificate",
+    hasExpiry: true,
+    expiryDays: 730,
+    requiresVerification: true,
+  },
+  {
+    key: "local_police_clearance",
+    name: "Local Police Clearance",
+    entity: ["general"],
+    category: "compliance",
+    hasExpiry: true,
+    expiryDays: null,
+    requiresVerification: true,
+  },
+  {
+    key: "tb_test",
+    name: "TB Test",
+    entity: ["general"],
+    category: "compliance",
+    hasExpiry: true,
+    expiryDays: null,
+    requiresVerification: true,
   },
   {
     key: "offer_letter",
@@ -213,153 +105,123 @@ const TYPES = [
     requiresVerification: false,
   },
   {
-    key: "reference_letter",
-    name: "Reference Letter",
-    entity: ["general"],
-    category: "reference",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "p45",
-    name: "P45",
-    entity: ["general"],
-    category: "financial",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "p60",
-    name: "P60",
-    entity: ["general"],
-    category: "financial",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "payslip",
-    name: "Payslip",
-    entity: ["general"],
-    category: "financial",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "disciplinary_record",
-    name: "Disciplinary Record",
+    key: "signed_agreement",
+    name: "Signed Agreement",
     entity: ["general"],
     category: "legal",
     hasExpiry: false,
     expiryDays: null,
+    requiresVerification: true,
+  },
+  {
+    key: "dbs",
+    name: "DBS",
+    entity: ["general"],
+    category: "compliance",
+    hasExpiry: true,
+    expiryDays: 1095,
+    requiresVerification: true,
+  },
+  {
+    key: "brp",
+    name: "BRP",
+    entity: ["general"],
+    category: "identity",
+    hasExpiry: true,
+    expiryDays: null,
+    requiresVerification: true,
+  },
+  {
+    key: "ni_number",
+    name: "NI Number",
+    entity: ["general"],
+    category: "identity",
+    hasExpiry: false,
+    expiryDays: null,
     requiresVerification: false,
   },
   {
-    key: "appraisal_form",
-    name: "Appraisal / Performance Review",
+    key: "proof_of_address",
+    name: "Proof of Address",
+    entity: ["general"],
+    category: "identity",
+    hasExpiry: true,
+    expiryDays: 90,
+    requiresVerification: true,
+  },
+  {
+    key: "paye_registration",
+    name: "PAYE Registration",
+    entity: ["general"],
+    category: "financial",
+    hasExpiry: false,
+    expiryDays: null,
+    requiresVerification: false,
+  },
+  {
+    key: "leave_applications",
+    name: "Leave Applications",
     entity: ["general"],
     category: "general",
     hasExpiry: false,
     expiryDays: null,
     requiresVerification: false,
   },
-
-  // ── Insurance & Compliance ────────────────────────────────────────────────
   {
-    key: "public_liability_insurance",
-    name: "Public Liability Insurance",
+    key: "salary_slips",
+    name: "Salary Slips",
     entity: ["general"],
-    category: "insurance",
-    hasExpiry: true,
-    expiryDays: 365,
+    category: "financial",
+    hasExpiry: false,
+    expiryDays: null,
     requiresVerification: false,
   },
   {
-    key: "employers_liability_insurance",
-    name: "Employers' Liability Insurance",
+    key: "appraisals",
+    name: "Appraisals",
     entity: ["general"],
-    category: "insurance",
-    hasExpiry: true,
-    expiryDays: 365,
+    category: "general",
+    hasExpiry: false,
+    expiryDays: null,
     requiresVerification: false,
   },
   {
-    key: "professional_indemnity",
-    name: "Professional Indemnity Insurance",
-    entity: ["general"],
-    category: "insurance",
-    hasExpiry: true,
-    expiryDays: 365,
-    requiresVerification: false,
-  },
-  {
-    key: "care_quality_commission",
-    name: "CQC Registration / Certificate",
+    key: "share_code",
+    name: "Share Code",
     entity: ["general"],
     category: "compliance",
     hasExpiry: true,
     expiryDays: null,
     requiresVerification: true,
   },
-  {
-    key: "health_safety_policy",
-    name: "Health & Safety Policy",
-    entity: ["general"],
-    category: "safety",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-  {
-    key: "risk_assessment",
-    name: "Risk Assessment",
-    entity: ["general"],
-    category: "safety",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
-
-  // ── General ───────────────────────────────────────────────────────────────
-  {
-    key: "other",
-    name: "Other Document",
-    entity: ["general"],
-    category: "general",
-    hasExpiry: false,
-    expiryDays: null,
-    requiresVerification: false,
-  },
 ];
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 async function seed() {
   await mongoose.connect(MONGO_URI);
-  console.log("✅  Connected to MongoDB");
+  console.log("✅ Connected to MongoDB");
 
   let created = 0;
-  let skipped = 0;
+  let updated = 0;
 
-  for (const t of TYPES) {
-    const exists = await DocumentType.findOne({ key: t.key });
-    if (exists) {
-      console.log(`   ⏭  Skipped  (already exists): ${t.name}`);
-      skipped++;
-      continue;
+  for (const doc of CATEGORIES) {
+    const filter = { key: doc.key };
+    const update = { ...doc, createdBy: SYSTEM_ID };
+    const options = { upsert: true, new: true, setDefaultsOnInsert: true };
+
+    const result = await DocumentType.findOneAndUpdate(filter, update, options);
+    if (result) {
+      console.log(`   ✅ Processed: ${doc.name} (${doc.key})`);
+      created++;
     }
-    await DocumentType.create({ ...t, createdBy: SYSTEM_ID });
-    console.log(`   ✅  Created: ${t.name}`);
-    created++;
   }
 
-  console.log(`\n🎉  Done — ${created} created, ${skipped} skipped.`);
+  console.log(`\n🎉 Seed complete: ${created} document types configured.`);
   await mongoose.disconnect();
 }
 
-seed().catch((err) => {
-  console.error("❌  Seed failed:", err);
-  process.exit(1);
-});
+if (process.argv[1]?.endsWith("seed-peopleops-doc-types.js")) {
+  seed().catch((err) => {
+    console.error("❌ Seed failed:", err);
+    process.exit(1);
+  });
+}

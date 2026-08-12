@@ -266,8 +266,8 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
       {/* ── Add Rota Modal ── */}
       {showAddModal && (
         <AddRotaModal
-          employeeList={clientList}
-          assignedToList={staffList}
+          employeeList={staffList}
+          assignedToList={clientList}
           defaultDate={selectedDate}
           serverError={serverError}
           onClose={() => setShowAddModal(false)}
@@ -279,8 +279,8 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
       {editingEvent && (
         <EditRotaModal
           event={editingEvent}
-          employeeList={clientList}
-          assignedToList={staffList}
+          employeeList={staffList}
+          assignedToList={clientList}
           onClose={() => setEditingEvent(null)}
           onSuccess={() => { setEditingEvent(null); revalidate(); }}
         />

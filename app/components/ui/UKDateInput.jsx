@@ -31,7 +31,8 @@ export default function UKDateInput({
   // Convert ISO YYYY-MM-DD → DD/MM/YYYY for display
   function isoToUK(iso) {
     if (!iso) return "";
-    const [y, m, d] = iso.split("-");
+    const cleanIso = String(iso).split("T")[0];
+    const [y, m, d] = cleanIso.split("-");
     return d && m && y ? `${d}/${m}/${y}` : "";
   }
 

@@ -30,7 +30,7 @@ const documentTypeSchema = new Schema(
     // Array to support multi-entity types (e.g. Passport → tenant + landlord)
     entity: {
       type: [String],
-      enum: ["landlord", "property", "tenant", "tenancy", "maintenance_job", "general"],
+      enum: ["general", "staff", "client"],
       required: true,
       validate: {
         validator: (v) => v.length >= 1,

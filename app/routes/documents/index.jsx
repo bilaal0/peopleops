@@ -3,6 +3,7 @@ import { useLoaderData, useFetcher, redirect } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { Document } from "../../models/document.server.js";
 import { User } from "../../models/user.server.js";
+import { DocumentType } from "../../models/documentType.server.js";
 import { connect } from "../../config/db.server.js";
 import { fmtDate } from "../../utils/date.js";
 import UKDateInput from "../../components/ui/UKDateInput.jsx";
@@ -19,9 +20,9 @@ export async function loader({ request }) {
   await connect();
 
   const organizationQuery = user.organizationId ? { organizationId: user.organizationId } : {};
-  const staffRoles  = ["EMPLOYEE", "REGISTERED_MANAGER", "ADMIN", "INITIAL_ADMIN", "MASTER_ADMIN", "SUPER_ADMIN"];
+  const staffRoles = ["EMPLOYEE", "REGISTERED_MANAGER", "ADMIN", "INITIAL_ADMIN", "MASTER_ADMIN", "SUPER_ADMIN"];
 
-  const [docs, staffList, clientList] = await Promise.all([
+  const [docs, staffList, clientList, docTypes] = await Promise.all([
     Document.find({ ...organizationQuery, deleted: false })
       .populate("docType", "name")
       .sort({ createdAt: -1 })
@@ -37,32 +38,37 @@ export async function loader({ request }) {
       .sort({ firstName: 1 })
       .lean()
       .catch(() => []),
+    DocumentType.find({ isActive: true })
+      .sort({ name: 1 })
+      .lean()
+      .catch(() => []),
   ]);
 
   return {
     documents: docs.map((d) => ({
-      _id:        d._id.toString(),
-      fileName:   d.fileName,
-      title:      d.title || null,
-      docType:    d.docType?.name || null,
-      fileSize:   d.fileSize || null,
-      status:     d.status || "pending",
+      _id: d._id.toString(),
+      fileName: d.fileName,
+      title: d.title || null,
+      docType: d.docType?.name || null,
+      fileSize: d.fileSize || null,
+      status: d.status || "pending",
       expiryDate: d.expiryDate || null,
-      notes:      d.notes || null,
-      createdAt:  d.createdAt,
+      notes: d.notes || null,
+      createdAt: d.createdAt,
     })),
     organizationId: user.organizationId?.toString() || null,
+    documentTypes: docTypes.map(dt => ({ _id: dt._id.toString(), name: dt.name })),
     people: [
       ...staffList.map((u) => ({
-        _id:        u._id.toString(),
-        name:       `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Staff Member",
-        label:      u.jobTitle || "Staff",
+        _id: u._id.toString(),
+        name: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Staff Member",
+        label: u.jobTitle || "Staff",
         entityType: "staff",
       })),
       ...clientList.map((u) => ({
-        _id:        u._id.toString(),
-        name:       `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Client",
-        label:      u.positionInCompany || "Client",
+        _id: u._id.toString(),
+        name: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Client",
+        label: u.positionInCompany || "Client",
         entityType: "client",
       })),
     ].sort((a, b) => a.name.localeCompare(b.name)),
@@ -100,9 +106,8 @@ function VerificationToggle({ documentId, currentStatus }) {
       <input type="hidden" name="status" value={isVerified ? "pending" : "verified"} />
       <button
         type="submit"
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition ${
-          isVerified ? "border-green-200 bg-green-50 text-green-700" : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
-        }`}
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition ${isVerified ? "border-green-200 bg-green-50 text-green-700" : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
+          }`}
       >
         <ShieldCheck className={`w-3 h-3 ${isVerified ? "text-green-600" : "text-slate-400"}`} />
         {isVerified ? "Verified" : "Pending"}
@@ -178,17 +183,17 @@ function DocumentCard({ doc }) {
 }
 
 // ── Upload Modal ──────────────────────────────────────────────────────────────
-function UploadModal({ people, organizationId, onClose }) {
-  const fetcher  = useFetcher();
-  const fileRef  = useRef(null);
-  const [fileName, setFileName]           = useState("");
+function UploadModal({ people, organizationId, documentTypes, onClose }) {
+  const fetcher = useFetcher();
+  const fileRef = useRef(null);
+  const [fileName, setFileName] = useState("");
   const [selectedPersonId, setSelectedId] = useState("");
 
   const isSubmitting = fetcher.state !== "idle";
-  const isSuccess    = fetcher.data?.success;
+  const isSuccess = fetcher.data?.success;
 
   const selectedPerson = people.find((p) => p._id === selectedPersonId);
-  const entityType     = selectedPerson?.entityType || "staff";
+  const entityType = selectedPerson?.entityType || "staff";
 
   if (isSuccess) setTimeout(onClose, 700);
 
@@ -217,8 +222,8 @@ function UploadModal({ people, organizationId, onClose }) {
           className="p-6 space-y-4 max-h-[80vh] overflow-y-auto"
         >
           <input type="hidden" name="entityType" value={entityType} />
-          <input type="hidden" name="entityId"   value={selectedPersonId} />
-          <input type="hidden" name="organizationId"   value={organizationId || ""} />
+          <input type="hidden" name="entityId" value={selectedPersonId} />
+          <input type="hidden" name="organizationId" value={organizationId || ""} />
 
           {/* Person */}
           <div>
@@ -258,9 +263,9 @@ function UploadModal({ people, organizationId, onClose }) {
               {fileName
                 ? <p className="text-sm font-semibold text-indigo-600 truncate max-w-xs">{fileName}</p>
                 : <>
-                    <p className="text-sm font-semibold text-slate-700">Click to choose a file</p>
-                    <p className="text-xs text-slate-400">PDF, JPG or PNG — up to 10 MB</p>
-                  </>
+                  <p className="text-sm font-semibold text-slate-700">Click to choose a file</p>
+                  <p className="text-xs text-slate-400">PDF, JPG or PNG — up to 10 MB</p>
+                </>
               }
             </div>
             <input
@@ -276,7 +281,7 @@ function UploadModal({ people, organizationId, onClose }) {
           {/* Title */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Title <span className="text-slate-400 font-normal">(optional)</span>
+              Document Name <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <input
               type="text"
@@ -286,16 +291,19 @@ function UploadModal({ people, organizationId, onClose }) {
             />
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Issue Date</label>
-              <UKDateInput name="issueDate" placeholder="DD/MM/YYYY" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Expiry Date</label>
-              <UKDateInput name="expiryDate" placeholder="DD/MM/YYYY" />
-            </div>
+          {/* Group */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Group</label>
+            <select
+              name="docType"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition"
+              required
+            >
+              <option value="">Select a group...</option>
+              {documentTypes.map(dt => (
+                <option key={dt._id} value={dt._id}>{dt.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Notes */}
@@ -348,8 +356,8 @@ function UploadModal({ people, organizationId, onClose }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DocumentsIndex() {
-  const { documents = [], people = [], organizationId } = useLoaderData();
-  const [search, setSearch]       = useState("");
+  const { documents = [], people = [], organizationId, documentTypes = [] } = useLoaderData();
+  const [search, setSearch] = useState("");
   const [showUpload, setShowUpload] = useState(false);
 
   const filtered = documents.filter((d) => {
@@ -363,9 +371,9 @@ export default function DocumentsIndex() {
   });
 
   const counts = {
-    total:    documents.length,
+    total: documents.length,
     verified: documents.filter((d) => d.status === "verified").length,
-    pending:  documents.filter((d) => d.status === "pending").length,
+    pending: documents.filter((d) => d.status === "pending").length,
     expiring: documents.filter((d) => {
       if (!d.expiryDate) return false;
       const days = Math.floor((new Date(d.expiryDate) - new Date()) / 86400000);
@@ -395,10 +403,10 @@ export default function DocumentsIndex() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total",        value: counts.total,    color: "text-slate-900" },
-          { label: "Verified",     value: counts.verified,  color: "text-green-700" },
-          { label: "Pending",      value: counts.pending,   color: "text-amber-700" },
-          { label: "Expiring Soon",value: counts.expiring,  color: "text-red-700"   },
+          { label: "Total", value: counts.total, color: "text-slate-900" },
+          { label: "Verified", value: counts.verified, color: "text-green-700" },
+          { label: "Pending", value: counts.pending, color: "text-amber-700" },
+          { label: "Expiring Soon", value: counts.expiring, color: "text-red-700" },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{s.label}</p>
@@ -450,6 +458,7 @@ export default function DocumentsIndex() {
         <UploadModal
           people={people}
           organizationId={organizationId}
+          documentTypes={documentTypes}
           onClose={() => setShowUpload(false)}
         />
       )}

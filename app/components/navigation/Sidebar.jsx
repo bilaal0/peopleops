@@ -135,8 +135,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           <div className={`relative flex h-16 items-center border-b border-[#E2E8F0] ${collapsed ? "justify-center px-2" : "justify-between px-4"}`}>
             <Link to="/dashboard" className="group flex items-center">
               <img
-                src="/assets/logo/Peopleops.png"
-                alt="PeopleOps"
+                src={getOrganizationLogoUrl(organization?.image) || "/assets/logo/Peopleops.png"}
+                alt={organization?.name || "PeopleOps"}
                 className={`${collapsed ? "h-9" : "h-12"} w-auto object-contain transition-transform group-hover:scale-105`}
               />
             </Link>
@@ -208,8 +208,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <div className="flex h-16 items-center border-b border-[#E2E8F0] px-6">
               <Link to="/dashboard" className="flex items-center" onClick={onMobileClose}>
                 <img
-                  src="/assets/logo/Peopleops.png"
-                  alt="PeopleOps"
+                  src={getOrganizationLogoUrl(organization?.image) || "/assets/logo/Peopleops.png"}
+                  alt={organization?.name || "PeopleOps"}
                   className="h-12 w-auto object-contain"
                 />
               </Link>
