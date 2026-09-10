@@ -105,6 +105,10 @@ export async function loader({ request }) {
           repeat:         e.repeat,
           repeatCount:    e.repeatCount,
           date:           toLocalDateOnly(e.date),
+          taskStatus:     e.taskStatus || "pending",
+          taskNotes:      e.taskNotes || "",
+          taskReasonIfNotDone: e.taskReasonIfNotDone || "",
+          taskUpdatedAt:  e.taskUpdatedAt ? e.taskUpdatedAt.toISOString() : null,
         },
       };
     }),

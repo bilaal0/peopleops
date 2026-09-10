@@ -79,6 +79,20 @@ export default function EventDetailModal({ event, onClose, onDelete }) {
               {event.repeatCount > 0 && <Row label="Times" value={event.repeatCount} />}
             </>
           )}
+          <Row
+            label="Task Status"
+            value={
+              event.taskStatus === "completed"
+                ? "Completed"
+                : event.taskStatus === "not_completed"
+                ? "Not Completed"
+                : "Pending Report"
+            }
+          />
+          {event.taskStatus === "not_completed" && event.taskReasonIfNotDone && (
+            <Row label="Reason Not Done" value={event.taskReasonIfNotDone} />
+          )}
+          {event.taskNotes && <Row label="Task Notes" value={event.taskNotes} />}
         </div>
 
         {/* Footer */}

@@ -31,6 +31,8 @@ export default [
   route("api/maintenance/run-cron", "routes/api/maintenance/run-cron.jsx"),
   route("api/tenancies/:id/rra-information-sheet", "routes/api/tenancies/$id.rra-information-sheet.jsx"),
   route("api/notifications", "routes/api/notifications.jsx"),
+  route("api/attendance", "routes/api/attendance.jsx"),
+  route("api/rota-task", "routes/api/rota-task.jsx"),
 
 
   layout("components/navigation/Layout.jsx", [
@@ -88,7 +90,10 @@ export default [
     route("disbursements/:id/mark-paid", "routes/disbursements/$id.mark-paid.jsx"),
     route("expenses/create", "routes/expenses/create.jsx"),
 
-    // ── Rota System ───────────────────────────────────────
+    // ── Rota System ───────────────────────────────────────────────
     route("rota", "routes/rota/index.jsx"),
+
+    // ── Staff Attendance & Tasks ──────────────────────────────────
+    route("attendance", "routes/attendance/index.jsx"),
   ]),
 ] satisfies RouteConfig;

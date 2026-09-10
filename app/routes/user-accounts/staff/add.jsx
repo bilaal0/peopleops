@@ -38,6 +38,7 @@ export async function action({ request }) {
 
   const email = formData.get("email")?.toString().trim().toLowerCase();
   const phone = formData.get("phone")?.toString().trim();
+  const password = formData.get("password")?.toString();
 
   const errors = {};
   if (statusRaw === null || statusRaw === "") errors.status = "Status is required.";
@@ -48,6 +49,11 @@ export async function action({ request }) {
   if (!postcode) errors.postcode = "Postcode is required.";
   if (!addressLine1) errors.addressLine1 = "Address line 1 is required.";
   if (!phone) errors.phone = "Telephone number is required.";
+  if (!password) {
+    errors.password = "Password is required for new staff accounts.";
+  } else if (password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  }
 
   if (Object.keys(errors).length > 0) {
     return data({ errors }, { status: 400 });
@@ -83,6 +89,8 @@ export async function action({ request }) {
       email: email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@temp.local`,
       phone,
       telephoneNo: phone,
+      password,
+      plainPassword: password,
       organizationId: currentUser.organizationId || null,
       addedBy: currentUser._id,
     });

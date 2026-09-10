@@ -22,8 +22,15 @@ export async function loader({ request }) {
   const organizationQuery = user.organizationId ? { organizationId: user.organizationId } : {};
   const staffRoles = ["EMPLOYEE", "REGISTERED_MANAGER", "ADMIN", "INITIAL_ADMIN", "MASTER_ADMIN", "SUPER_ADMIN"];
 
+  const isEmployeeOnly = user.roles?.includes("EMPLOYEE") && !user.roles?.includes("ADMIN") && !user.roles?.includes("SUPER_ADMIN");
+  
+  const documentQuery = { ...organizationQuery, deleted: false };
+  if (isEmployeeOnly) {
+    documentQuery.entityId = user.userId;
+  }
+
   const [docs, staffList, clientList, docTypes] = await Promise.all([
-    Document.find({ ...organizationQuery, deleted: false })
+    Document.find(documentQuery)
       .populate("docType", "name")
       .sort({ createdAt: -1 })
       .lean()
@@ -57,6 +64,7 @@ export async function loader({ request }) {
       createdAt: d.createdAt,
     })),
     organizationId: user.organizationId?.toString() || null,
+    isEmployeeOnly,
     documentTypes: docTypes.map(dt => ({ _id: dt._id.toString(), name: dt.name })),
     people: [
       ...staffList.map((u) => ({
@@ -138,7 +146,7 @@ function DeleteButton({ documentId }) {
   );
 }
 
-function DocumentCard({ doc }) {
+function DocumentCard({ doc, isEmployeeOnly }) {
   const ext = doc.fileName?.split(".").pop()?.toUpperCase() || "FILE";
   return (
     <div className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition">
@@ -148,7 +156,14 @@ function DocumentCard({ doc }) {
             {ext.length <= 4 ? ext : <FileText className="h-5 w-5" />}
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <VerificationToggle documentId={doc._id} currentStatus={doc.status} />
+            {!isEmployeeOnly ? (
+              <VerificationToggle documentId={doc._id} currentStatus={doc.status} />
+            ) : (
+              <div className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${doc.status === "verified" ? "border-green-200 bg-green-50 text-green-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                <ShieldCheck className={`w-3 h-3 ${doc.status === "verified" ? "text-green-600" : "text-slate-400"}`} />
+                {doc.status === "verified" ? "Verified" : "Pending"}
+              </div>
+            )}
             <ExpiryBadge expiryDate={doc.expiryDate} />
           </div>
         </div>
@@ -167,7 +182,7 @@ function DocumentCard({ doc }) {
       <div className="mt-5 flex items-center justify-between pt-4 border-t border-slate-100">
         <span className="text-xs text-slate-400">{fmtDate(doc.createdAt)}</span>
         <div className="flex items-center gap-1">
-          <DeleteButton documentId={doc._id} />
+          {!isEmployeeOnly && <DeleteButton documentId={doc._id} />}
           <button
             type="button"
             onClick={() => window.open(`/documents/${doc._id}/download`, "_blank")}
@@ -356,7 +371,7 @@ function UploadModal({ people, organizationId, documentTypes, onClose }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DocumentsIndex() {
-  const { documents = [], people = [], organizationId, documentTypes = [] } = useLoaderData();
+  const { documents = [], people = [], organizationId, documentTypes = [], isEmployeeOnly } = useLoaderData();
   const [search, setSearch] = useState("");
   const [showUpload, setShowUpload] = useState(false);
 
@@ -390,14 +405,16 @@ export default function DocumentsIndex() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Document Vault</h1>
           <p className="mt-1 text-sm text-slate-500">Secure storage for staff and client documents.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowUpload(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
-        >
-          <Plus className="h-4 w-4" />
-          Upload Document
-        </button>
+        {!isEmployeeOnly && (
+          <button
+            type="button"
+            onClick={() => setShowUpload(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
+          >
+            <Plus className="h-4 w-4" />
+            Upload Document
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -435,7 +452,7 @@ export default function DocumentsIndex() {
           <p className="mt-2 text-sm text-slate-500">
             {search ? "Try adjusting your search." : "Upload the first document to get started."}
           </p>
-          {!search && (
+          {!search && !isEmployeeOnly && (
             <button
               type="button"
               onClick={() => setShowUpload(true)}
@@ -448,7 +465,7 @@ export default function DocumentsIndex() {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((doc) => (
-            <DocumentCard key={doc._id} doc={doc} />
+            <DocumentCard key={doc._id} doc={doc} isEmployeeOnly={isEmployeeOnly} />
           ))}
         </div>
       )}

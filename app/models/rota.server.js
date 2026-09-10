@@ -40,6 +40,17 @@ const rotaSchema = new Schema(
     // FullCalendar event colour
     color: { type: String, default: "#1e3a5f" },
 
+    // Staff Task Execution Fields
+    taskStatus: {
+      type: String,
+      enum: ["pending", "completed", "not_completed"],
+      default: "pending",
+    },
+    taskNotes: { type: String, default: "" },
+    taskReasonIfNotDone: { type: String, default: "" },
+    taskUpdatedAt: { type: Date },
+    taskUpdatedBy: { type: Schema.Types.ObjectId, ref: "User" },
+
     deleted: { type: Boolean, default: false },
   },
   { timestamps: true }

@@ -146,6 +146,44 @@ export default function EditRotaModal({ event, employeeList = [], assignedToList
               </select>
             </div>
           </div>
+
+          {/* Staff Task Report Status */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Staff Task Status
+              </span>
+              {event.taskStatus === "completed" && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                  Completed
+                </span>
+              )}
+              {event.taskStatus === "not_completed" && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">
+                  Not Completed
+                </span>
+              )}
+              {(!event.taskStatus || event.taskStatus === "pending") && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                  Pending Staff Report
+                </span>
+              )}
+            </div>
+
+            {event.taskStatus === "not_completed" && event.taskReasonIfNotDone && (
+              <div className="rounded-lg bg-red-50 p-2.5 border border-red-200 text-red-900 text-xs">
+                <span className="font-bold block mb-0.5">Reason Not Completed:</span>
+                <p>{event.taskReasonIfNotDone}</p>
+              </div>
+            )}
+
+            {event.taskNotes && (
+              <div className="rounded-lg bg-white p-2.5 border border-slate-200 text-slate-800 text-xs">
+                <span className="font-bold text-slate-600 block mb-0.5">Staff Work Notes:</span>
+                <p className="whitespace-pre-line">{event.taskNotes}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

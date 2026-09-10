@@ -46,10 +46,17 @@ export async function getOrganizationDashboardData(organizationId) {
     todayRota: todayRota.map(shift => ({
       _id: shift._id.toString(),
       title: shift.title || "Shift",
+      description: shift.description || "",
       startTime: shift.startTime,
       endTime: shift.endTime,
       employee: shift.employee ? `${shift.employee.firstName} ${shift.employee.lastName}` : shift.employeeName,
+      employeeId: shift.employee?._id ? shift.employee._id.toString() : (shift.employee ? shift.employee.toString() : ""),
       assignedTo: shift.assignedTo ? `${shift.assignedTo.firstName} ${shift.assignedTo.lastName}` : shift.assignedToName,
+      taskStatus: shift.taskStatus || "pending",
+      taskNotes: shift.taskNotes || "",
+      taskReasonIfNotDone: shift.taskReasonIfNotDone || "",
+      taskUpdatedAt: shift.taskUpdatedAt ? shift.taskUpdatedAt.toISOString() : null,
     })),
+
   };
 }

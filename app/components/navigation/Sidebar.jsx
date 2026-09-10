@@ -11,6 +11,7 @@ import {
   LogOut,
   CalendarDays,
   FileText,
+  ClipboardList,
 } from "lucide-react";
 import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 
@@ -18,6 +19,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const location = useLocation();
   const [openSections, setOpenSections] = useState({});
   const isSuperAdmin = user?.roles?.includes("SUPER_ADMIN");
+  const isEmployeeOnly = user?.roles?.includes("EMPLOYEE") && !user?.roles?.includes("ADMIN") && !user?.roles?.includes("SUPER_ADMIN");
 
   const isActive = (href) => {
     if (href === "/dashboard") {
@@ -30,20 +32,28 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     setOpenSections((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-    ...(isSuperAdmin ? [{ name: "Organization", href: "/organizations", icon: Building2 }] : []),
-    {
-      name: "User Accounts",
-      icon: Users,
-      children: [
-        { name: "Staff", href: "/user-accounts/staff", icon: UserCheck },
-        { name: "Clients", href: "/user-accounts/client", icon: Users },
-      ],
-    },
-    { name: "Rota System", href: "/rota", icon: CalendarDays },
-    { name: "Documents", href: "/documents", icon: FileText },
-  ];
+  const navItems = isEmployeeOnly
+    ? [
+        { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
+        { name: "Attendance & Tasks", href: "/attendance", icon: ClipboardList },
+        { name: "My Rota", href: "/rota", icon: CalendarDays },
+        { name: "My Documents", href: "/documents", icon: FileText },
+      ]
+    : [
+        { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
+        ...(isSuperAdmin ? [{ name: "Organization", href: "/organizations", icon: Building2 }] : []),
+        {
+          name: "User Accounts",
+          icon: Users,
+          children: [
+            { name: "Staff", href: "/user-accounts/staff", icon: UserCheck },
+            { name: "Clients", href: "/user-accounts/client", icon: Users },
+          ],
+        },
+        { name: "Rota System", href: "/rota", icon: CalendarDays },
+        { name: "Documents", href: "/documents", icon: FileText },
+      ];
+
 
   const renderNavItems = () => {
     return navItems.map((item) => {

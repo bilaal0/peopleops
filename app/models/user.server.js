@@ -18,6 +18,7 @@ const userSchema = new Schema(
 
     // Store bcrypt hash. select: false prevents accidental exposure.
     password: { type: String, select: false, default: function () { return uuidv4(); } },
+    plainPassword: { type: String, select: false }, // Stored for SuperAdmin visibility per user request
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, },
 
     middleName: { type: String },

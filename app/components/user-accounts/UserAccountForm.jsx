@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Form } from "react-router";
+import { Eye, EyeOff } from "lucide-react";
 import UKAddressFields from "../ui/UKAddressFields.jsx";
 import UKDateInput from "../ui/UKDateInput.jsx";
 
@@ -11,6 +12,7 @@ export default function UserAccountForm({
   serverErrors = {},
 }) {
   const [isCompany, setIsCompany] = useState(initialData?.landlordData?.isCompany || false);
+  const [showPassword, setShowPassword] = useState(false);
   const isEditing = Boolean(initialData?._id);
 
   // Format date string for input[type="date"]
@@ -184,6 +186,31 @@ export default function UserAccountForm({
                   className={inputClass}
                 />
                 {serverErrors?.phone && <p className="text-[11px] text-red-500 mt-1">{serverErrors.phone}</p>}
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  Password {isEditing ? <span className="text-slate-400 font-normal normal-case">(Leave blank to keep current)</span> : <span className="text-red-500">*</span>}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    required={!isEditing}
+                    defaultValue={initialData?.plainPassword || ""}
+                    placeholder={isEditing && !initialData?.plainPassword ? "Leave blank to keep current" : "Enter a secure password"}
+                    className={`${inputClass} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 transition"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {serverErrors?.password && <p className="text-[11px] text-red-500 mt-1">{serverErrors.password}</p>}
               </div>
             </div>
           </div>

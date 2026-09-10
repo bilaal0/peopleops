@@ -10,7 +10,15 @@ export async function loader({ params, request }) {
 
   await connect();
 
-  const staffUser = await User.findOne({ _id: params.id, deleted: false }).lean();
+  let query = User.findOne({ _id: params.id, deleted: false });
+
+  // If user is SUPER_ADMIN, allow them to view the plain text password
+  if (user.roles?.includes("SUPER_ADMIN")) {
+    query = query.select("+plainPassword");
+  }
+
+  const staffUser = await query.lean();
+
   if (!staffUser) {
     throw new Response("Staff User Not Found", { status: 404 });
   }
@@ -50,6 +58,7 @@ export async function action({ params, request }) {
   const addressLine3 = formData.get("addressLine3")?.toString().trim();
 
   const phone = formData.get("phone")?.toString().trim();
+  const password = formData.get("password")?.toString();
 
   const errors = {};
   if (!firstName) errors.firstName = "First name is required.";
@@ -59,13 +68,16 @@ export async function action({ params, request }) {
   if (!postcode) errors.postcode = "Postcode is required.";
   if (!addressLine1) errors.addressLine1 = "Address line 1 is required.";
   if (!phone) errors.phone = "Telephone number is required.";
+  if (password && password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  }
 
   if (Object.keys(errors).length > 0) {
     return data({ errors }, { status: 400 });
   }
 
   try {
-    await User.findByIdAndUpdate(params.id, {
+    const updateData = {
       roles: [role],
       status,
       firstName,
@@ -82,7 +94,14 @@ export async function action({ params, request }) {
       addressLine3,
       phone,
       telephoneNo: phone,
-    });
+    };
+
+    if (password) {
+      updateData.password = password;
+      updateData.plainPassword = password;
+    }
+
+    await User.findByIdAndUpdate(params.id, updateData);
 
     return redirect("/user-accounts/staff");
   } catch (error) {
