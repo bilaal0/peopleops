@@ -23,7 +23,7 @@ export async function loader({ request }) {
   const staffRoles = ["EMPLOYEE", "REGISTERED_MANAGER", "ADMIN", "INITIAL_ADMIN", "MASTER_ADMIN", "SUPER_ADMIN"];
 
   const isEmployeeOnly = user.roles?.includes("EMPLOYEE") && !user.roles?.includes("ADMIN") && !user.roles?.includes("SUPER_ADMIN");
-  
+
   const documentQuery = { ...organizationQuery, deleted: false };
   if (isEmployeeOnly) {
     documentQuery.entityId = user.userId;
@@ -373,31 +373,31 @@ function UploadModal({ people, organizationId, documentTypes, onClose }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 // Category display config
 const CATEGORY_LABELS = {
-  certificate:  "Certificates",
-  licence:      "Licences",
-  safety:       "Safety",
-  insurance:    "Insurance",
-  inspection:   "Inspections",
-  identity:     "Identity",
-  compliance:   "Compliance",
-  financial:    "Financial",
-  reference:    "Reference",
-  legal:        "Legal",
-  general:      "General",
+  certificate: "Certificates",
+  licence: "Licences",
+  safety: "Safety",
+  insurance: "Insurance",
+  inspection: "Inspections",
+  identity: "Identity",
+  compliance: "Compliance",
+  financial: "Financial",
+  reference: "Reference",
+  legal: "Legal",
+  general: "General",
 };
 
 const CATEGORY_COLORS = {
-  certificate:  "text-emerald-700 border-emerald-500 bg-emerald-50",
-  licence:      "text-fuchsia-700 border-fuchsia-500 bg-fuchsia-50",
-  safety:       "text-red-700 border-red-500 bg-red-50",
-  insurance:    "text-teal-700 border-teal-500 bg-teal-50",
-  inspection:   "text-sky-700 border-sky-500 bg-sky-50",
-  identity:     "text-cyan-700 border-cyan-500 bg-cyan-50",
-  compliance:   "text-violet-700 border-violet-500 bg-violet-50",
-  financial:    "text-orange-700 border-orange-500 bg-orange-50",
-  reference:    "text-lime-700 border-lime-500 bg-lime-50",
-  legal:        "text-rose-700 border-rose-500 bg-rose-50",
-  general:      "text-slate-600 border-slate-400 bg-slate-50",
+  certificate: "text-emerald-700 border-emerald-500 bg-emerald-50",
+  licence: "text-fuchsia-700 border-fuchsia-500 bg-fuchsia-50",
+  safety: "text-red-700 border-red-500 bg-red-50",
+  insurance: "text-teal-700 border-teal-500 bg-teal-50",
+  inspection: "text-sky-700 border-sky-500 bg-sky-50",
+  identity: "text-cyan-700 border-cyan-500 bg-cyan-50",
+  compliance: "text-violet-700 border-violet-500 bg-violet-50",
+  financial: "text-orange-700 border-orange-500 bg-orange-50",
+  reference: "text-lime-700 border-lime-500 bg-lime-50",
+  legal: "text-rose-700 border-rose-500 bg-rose-50",
+  general: "text-slate-600 border-slate-400 bg-slate-50",
 };
 
 export default function DocumentsIndex() {
@@ -487,16 +487,14 @@ export default function DocumentsIndex() {
             <button
               type="button"
               onClick={() => setActiveCategory("all")}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition ${
-                activeCategory === "all"
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition ${activeCategory === "all"
                   ? "bg-slate-800 text-white border-slate-800"
                   : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-              }`}
+                }`}
             >
               All
-              <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[18px] ${
-                activeCategory === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-              }`}>
+              <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[18px] ${activeCategory === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                }`}>
                 {documents.length}
               </span>
             </button>
@@ -510,16 +508,14 @@ export default function DocumentsIndex() {
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategory(isActive ? "all" : cat)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition ${
-                    isActive
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition ${isActive
                       ? colorClass + " border-current"
                       : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   {CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[18px] ${
-                    isActive ? "bg-current/10" : "bg-slate-100 text-slate-500"
-                  }`}>
+                  <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[18px] ${isActive ? "bg-current/10" : "bg-slate-100 text-slate-500"
+                    }`}>
                     {count}
                   </span>
                 </button>

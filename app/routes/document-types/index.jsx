@@ -9,28 +9,28 @@ import { connect } from "../../config/db.server.js";
 import DataTable from "../../components/ui/DataTable.jsx";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
-const ENTITIES   = ["landlord", "property", "tenant", "tenancy"];
+const ENTITIES = ["landlord", "property", "tenant", "tenancy"];
 const CATEGORIES = ["certificate", "licence", "safety", "insurance", "inspection", "identity", "compliance", "financial", "reference", "legal", "general"];
 
 const ENTITY_COLORS = {
   landlord: "bg-purple-100 text-purple-700",
   property: "bg-indigo-100 text-indigo-700",
-  tenant:   "bg-blue-100 text-blue-700",
-  tenancy:  "bg-amber-100 text-amber-700",
+  tenant: "bg-blue-100 text-blue-700",
+  tenancy: "bg-amber-100 text-amber-700",
 };
 
 const CAT_COLORS = {
-  certificate:    "bg-emerald-100 text-emerald-700",
-  licence:        "bg-fuchsia-100 text-fuchsia-700",
-  safety:         "bg-red-100 text-red-700",
-  insurance:      "bg-teal-100 text-teal-700",
-  inspection:     "bg-sky-100 text-sky-700",
-  identity:       "bg-cyan-100 text-cyan-700",
-  compliance:     "bg-violet-100 text-violet-700",
-  financial:      "bg-orange-100 text-orange-700",
-  reference:      "bg-lime-100 text-lime-700",
-  legal:          "bg-rose-100 text-rose-700",
-  general:        "bg-gray-100 text-gray-700",
+  certificate: "bg-emerald-100 text-emerald-700",
+  licence: "bg-fuchsia-100 text-fuchsia-700",
+  safety: "bg-red-100 text-red-700",
+  insurance: "bg-teal-100 text-teal-700",
+  inspection: "bg-sky-100 text-sky-700",
+  identity: "bg-cyan-100 text-cyan-700",
+  compliance: "bg-violet-100 text-violet-700",
+  financial: "bg-orange-100 text-orange-700",
+  reference: "bg-lime-100 text-lime-700",
+  legal: "bg-rose-100 text-rose-700",
+  general: "bg-gray-100 text-gray-700",
 };
 
 function slugify(str) {
@@ -62,22 +62,22 @@ export async function action({ request }) {
   if (!user || !user.roles?.includes("SUPER_ADMIN")) return data({ error: "Unauthorised" }, { status: 403 });
 
   const formData = await request.formData();
-  const intent   = formData.get("intent");
-  
+  const intent = formData.get("intent");
+
   await connect();
 
   try {
     if (intent === "create") {
-      const name     = formData.get("name")?.trim();
-      const key      = formData.get("key")?.trim();
-      const entity   = formData.getAll("entity").filter(Boolean);
+      const name = formData.get("name")?.trim();
+      const key = formData.get("key")?.trim();
+      const entity = formData.getAll("entity").filter(Boolean);
       const category = formData.get("category") || "general";
-      const hasExpiry           = formData.get("hasExpiry") === "true";
-      const expiryDays          = formData.get("expiryDays") ? Number(formData.get("expiryDays")) : null;
+      const hasExpiry = formData.get("hasExpiry") === "true";
+      const expiryDays = formData.get("expiryDays") ? Number(formData.get("expiryDays")) : null;
       const requiresVerification = formData.get("requiresVerification") === "true";
 
       if (!name) return data({ error: "Name is required" }, { status: 400 });
-      if (!key)  return data({ error: "Key is required" }, { status: 400 });
+      if (!key) return data({ error: "Key is required" }, { status: 400 });
       if (entity.length === 0) return data({ error: "At least one entity is required" }, { status: 400 });
 
       // Check for duplicate key
@@ -98,12 +98,12 @@ export async function action({ request }) {
     }
 
     if (intent === "update") {
-      const id       = formData.get("id");
-      const name     = formData.get("name")?.trim();
-      const entity   = formData.getAll("entity").filter(Boolean);
+      const id = formData.get("id");
+      const name = formData.get("name")?.trim();
+      const entity = formData.getAll("entity").filter(Boolean);
       const category = formData.get("category") || "general";
-      const hasExpiry           = formData.get("hasExpiry") === "true";
-      const expiryDays          = formData.get("expiryDays") ? Number(formData.get("expiryDays")) : null;
+      const hasExpiry = formData.get("hasExpiry") === "true";
+      const expiryDays = formData.get("expiryDays") ? Number(formData.get("expiryDays")) : null;
       const requiresVerification = formData.get("requiresVerification") === "true";
 
       if (!name) return data({ error: "Name is required" }, { status: 400 });
@@ -145,11 +145,10 @@ function TogglePill({ label, active, onClick, colorClass }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize border transition ${
-        active
+      className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize border transition ${active
           ? `${colorClass} border-current/20 ring-1 ring-current/10`
           : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
-      }`}
+        }`}
     >
       {label}
     </button>
@@ -435,9 +434,8 @@ export default function DocumentTypesAdmin() {
             </button>
             <button
               onClick={() => handleToggle(t._id, t.isActive)}
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition ${
-                t.isActive ? "border-red-200 text-red-600 hover:bg-red-50" : "border-green-200 text-green-600 hover:bg-green-50"
-              }`}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition ${t.isActive ? "border-red-200 text-red-600 hover:bg-red-50" : "border-green-200 text-green-600 hover:bg-green-50"
+                }`}
             >
               {t.isActive ? "Archive" : "Activate"}
             </button>
