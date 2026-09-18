@@ -15,6 +15,7 @@ export default function AddRotaModal({ employeeList = [], assignedToList = [], d
   const [endTime, setEndTime] = useState("");
   const [repeat, setRepeat] = useState("none");
   const [repeatCount, setRepeatCount] = useState("");
+  const [sleep, setSleep] = useState("");
   const [description, setDescription] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [assignedToId, setAssignedToId] = useState("");
@@ -46,6 +47,7 @@ export default function AddRotaModal({ employeeList = [], assignedToList = [], d
       endTime,
       repeat,
       repeatCount: repeat !== "none" ? (repeatCount || "1") : "1",
+      sleep: sleep || "0",
       description,
       employeeId,
       assignedToId,
@@ -112,8 +114,8 @@ export default function AddRotaModal({ employeeList = [], assignedToList = [], d
             </div>
           </div>
 
-          {/* Repeat & How Many Times */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Repeat, How Many Times & Sleep */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className={labelClass}>Repeat</label>
               <select
@@ -139,6 +141,17 @@ export default function AddRotaModal({ employeeList = [], assignedToList = [], d
                 placeholder="e.g. 4"
                 disabled={repeat === "none"}
                 className={`${inputClass} ${repeat === "none" ? "opacity-50 cursor-not-allowed" : ""}`}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Sleep</label>
+              <input
+                type="number"
+                min="0"
+                value={sleep}
+                onChange={(e) => setSleep(e.target.value)}
+                placeholder="0"
+                className={inputClass}
               />
             </div>
           </div>

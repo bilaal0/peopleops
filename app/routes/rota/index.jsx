@@ -113,6 +113,7 @@ export async function loader({ request }) {
           endTime:        e.endTime,
           repeat:         e.repeat,
           repeatCount:    e.repeatCount,
+          sleep:          e.sleep ?? 0,
           date:           toLocalDateOnly(e.date),
           taskStatus:     e.taskStatus || "pending",
           taskNotes:      e.taskNotes || "",
@@ -147,6 +148,7 @@ export async function action({ request }) {
   const endTime     = formData.get("endTime");
   const repeat      = formData.get("repeat") || "none";
   const repeatCount = parseInt(formData.get("repeatCount") || "1", 10);
+  const sleep       = parseInt(formData.get("sleep") || "0", 10) || 0;
   const description = formData.get("description") || "";
   const employeeId  = formData.get("employeeId");
   const assignedToId = formData.get("assignedToId");
@@ -199,6 +201,7 @@ export async function action({ request }) {
       description,
       repeat,
       repeatCount: repeat === "none" ? 0 : repeatCount,
+      sleep,
       employee: employeeId,
       employeeName,
       assignedTo: assignedToId || undefined,
@@ -220,6 +223,7 @@ export async function action({ request }) {
           date: d, startTime, endTime, start: s, end: en, description,
           repeat: "none",
           repeatCount: 0,
+          sleep,
           employee: employeeId, employeeName,
           assignedTo: assignedToId || undefined, assignedToName,
           organizationId: currentUser.organizationId || null,
@@ -250,6 +254,7 @@ export async function action({ request }) {
       date: d, startTime, endTime, start, end, description,
       repeat: i === 0 ? repeat : "none",
       repeatCount: i === 0 ? repeatCount : 0,
+      sleep,
       employee: employeeId, employeeName,
       assignedTo: assignedToId || undefined, assignedToName,
       organizationId: currentUser.organizationId || null,

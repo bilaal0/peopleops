@@ -24,6 +24,7 @@ const rotaSchema = new Schema(
       default: "none",
     },
     repeatCount: { type: Number, default: 0 },
+    sleep: { type: Number, default: 0 },
 
     // Staff member assigned
     employee: { type: Schema.Types.ObjectId, ref: "User", required: true },

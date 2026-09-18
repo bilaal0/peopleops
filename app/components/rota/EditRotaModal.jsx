@@ -17,6 +17,7 @@ export default function EditRotaModal({ event, employeeList = [], assignedToList
   const [endTime, setEndTime]     = useState(event.endTime || "");
   const [repeat, setRepeat]       = useState(event.repeat || "none");
   const [repeatCount, setRepeatCount] = useState(event.repeatCount || "");
+  const [sleep, setSleep]             = useState(event.sleep ?? event.extendedProps?.sleep ?? "");
   const [description, setDescription] = useState(event.description || "");
   const [employeeId, setEmployeeId]   = useState(event.employeeId || "");
   const [assignedToId, setAssignedToId] = useState(event.assignedToId || "");
@@ -49,6 +50,7 @@ export default function EditRotaModal({ event, employeeList = [], assignedToList
         endTime,
         repeat,
         repeatCount: repeat !== "none" ? (repeatCount || "1") : "1",
+        sleep: sleep || "0",
         description,
         employeeId,
         assignedToId,
@@ -90,8 +92,8 @@ export default function EditRotaModal({ event, employeeList = [], assignedToList
             </div>
           </div>
 
-          {/* Repeat */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Repeat, How Many Times & Sleep */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className={labelClass}>Repeat</label>
               <select value={repeat} onChange={(e) => setRepeat(e.target.value)} className={inputClass}>
@@ -111,6 +113,17 @@ export default function EditRotaModal({ event, employeeList = [], assignedToList
                 placeholder="e.g. 4"
                 disabled={repeat === "none"}
                 className={`${inputClass} ${repeat === "none" ? "opacity-50 cursor-not-allowed" : ""}`}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Sleep</label>
+              <input
+                type="number"
+                min="0"
+                value={sleep}
+                onChange={(e) => setSleep(e.target.value)}
+                placeholder="0"
+                className={inputClass}
               />
             </div>
           </div>
