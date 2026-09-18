@@ -31,7 +31,7 @@ export async function getOrganizationDashboardData(organizationId) {
       date: { $gte: todayStart, $lte: todayEnd }
     })
       .populate("employee", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("assignedTo", "firstName lastName companyName landlordData")
       .sort({ startTime: 1 })
       .lean()
   ]);
@@ -51,7 +51,9 @@ export async function getOrganizationDashboardData(organizationId) {
       endTime: shift.endTime,
       employee: shift.employee ? `${shift.employee.firstName} ${shift.employee.lastName}` : shift.employeeName,
       employeeId: shift.employee?._id ? shift.employee._id.toString() : (shift.employee ? shift.employee.toString() : ""),
-      assignedTo: shift.assignedTo ? `${shift.assignedTo.firstName} ${shift.assignedTo.lastName}` : shift.assignedToName,
+      assignedTo: shift.assignedTo
+        ? (shift.assignedTo.companyName || shift.assignedTo.landlordData?.companyName || `${shift.assignedTo.firstName} ${shift.assignedTo.lastName}`.trim())
+        : (shift.assignedToName || ""),
       taskStatus: shift.taskStatus || "pending",
       taskNotes: shift.taskNotes || "",
       taskReasonIfNotDone: shift.taskReasonIfNotDone || "",

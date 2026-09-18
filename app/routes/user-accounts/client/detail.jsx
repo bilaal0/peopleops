@@ -226,7 +226,8 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState("profile");
 
   const fullName = `${client.title ? client.title + " " : ""}${client.firstName || ""} ${client.lastName || ""}`.trim();
-  const isCompany = Boolean(client.landlordData?.isCompany);
+  const companyName = client.companyName || client.landlordData?.companyName || "";
+  const isCompany = Boolean(companyName || client.landlordData?.isCompany);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,7 +242,7 @@ export default function ClientDetailPage() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{fullName || "Client Profile"}</h1>
                 <p className="mt-1 text-sm text-gray-600">
-                  {isCompany ? `Company Client: ${client.landlordData?.companyName || "Corporate Body"}` : "Individual Client Account"}
+                  {companyName ? `Company: ${companyName}` : "Individual Client Account"}
                 </p>
               </div>
             </div>
@@ -307,11 +308,11 @@ export default function ClientDetailPage() {
               <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-sm">
                 <div><dt className="text-gray-500 text-xs mb-1">Email Address</dt><dd className="font-medium text-gray-900 break-all">{client.email}</dd></div>
                 <div><dt className="text-gray-500 text-xs mb-1">Telephone Number</dt><dd className="font-medium text-gray-900">{client.phone || client.telephoneNo || "—"}</dd></div>
-                {isCompany && (
-                  <>
-                    <div><dt className="text-gray-500 text-xs mb-1">Company Name</dt><dd className="font-medium text-gray-900">{client.landlordData?.companyName || "—"}</dd></div>
-                    <div><dt className="text-gray-500 text-xs mb-1">Company Number</dt><dd className="font-medium text-gray-900">{client.landlordData?.companyNumber || "—"}</dd></div>
-                  </>
+                {companyName && (
+                  <div><dt className="text-gray-500 text-xs mb-1">Company Name</dt><dd className="font-medium text-gray-900">{companyName}</dd></div>
+                )}
+                {client.landlordData?.companyNumber && (
+                  <div><dt className="text-gray-500 text-xs mb-1">Company Number</dt><dd className="font-medium text-gray-900">{client.landlordData.companyNumber}</dd></div>
                 )}
                 <div><dt className="text-gray-500 text-xs mb-1">Created On</dt><dd className="font-medium text-gray-900">{client.createdAt ? new Date(client.createdAt).toLocaleDateString("en-GB") : "—"}</dd></div>
                 
@@ -325,6 +326,23 @@ export default function ClientDetailPage() {
                 </div>
               </dl>
             </div>
+
+            {/* Services Provided */}
+            {client.services && client.services.length > 0 && (
+              <div className="pt-6 border-t border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Services Provided</h3>
+                <div className="flex flex-wrap gap-2">
+                  {client.services.map((srv) => (
+                    <span
+                      key={srv}
+                      className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100"
+                    >
+                      {srv}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

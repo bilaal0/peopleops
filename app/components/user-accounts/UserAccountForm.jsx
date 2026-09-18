@@ -4,6 +4,18 @@ import { Eye, EyeOff } from "lucide-react";
 import UKAddressFields from "../ui/UKAddressFields.jsx";
 import UKDateInput from "../ui/UKDateInput.jsx";
 
+export const CLIENT_SERVICES = [
+  "BRANDING",
+  "IT & SOFTWARE SERVICES",
+  "MARKETING SOLUTIONS",
+  "ADMINISTRATION & BUISNESS SUPPORT",
+  "SALES & BUISNESS DEVELOPMENT",
+  "SOCIAL MEDIA MANAGEMENT",
+  "WEB DEVELOPMENT",
+  "AUDIO & VIDEO PRODUCTION",
+  "BUSINESS CONSULTING",
+];
+
 export default function UserAccountForm({
   accountType = "staff", // "staff" | "client"
   initialData = {},
@@ -12,6 +24,11 @@ export default function UserAccountForm({
   serverErrors = {},
 }) {
   const [isCompany, setIsCompany] = useState(initialData?.landlordData?.isCompany || false);
+  const [hasServices, setHasServices] = useState(
+    Array.isArray(initialData?.services)
+      ? initialData.services.length > 0
+      : Boolean(initialData?.services || initialData?.service)
+  );
   const [showPassword, setShowPassword] = useState(false);
   const isEditing = Boolean(initialData?._id);
 
@@ -101,15 +118,36 @@ export default function UserAccountForm({
                   <option value="Prefer not to say">Prefer not to say</option>
                 </select>
               </div>
+
+              <div>
+                <label className={labelClass}>Date of Birth (DOB)</label>
+                <UKDateInput
+                  name="dob"
+                  defaultValue={formatDate(initialData?.dob)}
+                  className={inputClass}
+                  placeholder="DD/MM/YYYY"
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>National Insurance (NIC)</label>
+                <input
+                  type="text"
+                  name="nic"
+                  defaultValue={initialData?.nic || initialData?.nationalInsuranceNumber || ""}
+                  placeholder="e.g. QQ 12 34 56 A"
+                  className={`${inputClass} uppercase`}
+                />
+              </div>
             </div>
           </div>
 
           <hr className="border-slate-100" />
 
-          {/* 3. Job Title & Date */}
+          {/* 3. Job Title, Salary & Sponsorship */}
           <div>
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
-              Employment Info
+              Employment & Sponsorship Info
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
@@ -134,12 +172,90 @@ export default function UserAccountForm({
                   placeholder="DD/MM/YYYY"
                 />
               </div>
+
+              <div>
+                <label className={labelClass}>Salary (£)</label>
+                <input
+                  type="number"
+                  name="salary"
+                  step="any"
+                  min="0"
+                  defaultValue={initialData?.salary !== undefined && initialData?.salary !== null ? initialData?.salary : ""}
+                  placeholder="e.g. 35000"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Certificate of Sponsorship (COS)</label>
+                <input
+                  type="text"
+                  name="cos"
+                  defaultValue={initialData?.cos || initialData?.cosNumber || ""}
+                  placeholder="e.g. W123456789"
+                  className={inputClass}
+                />
+              </div>
             </div>
           </div>
 
           <hr className="border-slate-100" />
 
-          {/* 4. Address */}
+          {/* 4. Bank Details */}
+          <div>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
+              Bank Details
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className={labelClass}>Account Name</label>
+                <input
+                  type="text"
+                  name="bankAccountName"
+                  defaultValue={initialData?.bankDetails?.accountName || ""}
+                  placeholder="e.g. John Doe"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Bank Name</label>
+                <input
+                  type="text"
+                  name="bankName"
+                  defaultValue={initialData?.bankDetails?.bankName || ""}
+                  placeholder="e.g. Barclays"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Account Number</label>
+                <input
+                  type="text"
+                  name="bankAccountNumber"
+                  defaultValue={initialData?.bankDetails?.accountNumber || ""}
+                  placeholder="e.g. 12345678"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Sort Code</label>
+                <input
+                  type="text"
+                  name="bankSortCode"
+                  defaultValue={initialData?.bankDetails?.sortCode || ""}
+                  placeholder="e.g. 20-00-00"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-slate-100" />
+
+          {/* 5. Address */}
           <div>
             <UKAddressFields
               values={initialData}
@@ -255,10 +371,10 @@ export default function UserAccountForm({
           </div>
         </div>
 
-        {/* 1. Personal Details */}
+        {/* 1. Personal & Company Details */}
         <div>
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-            Personal Details <span className="text-red-500">*</span>
+            Personal & Company Details <span className="text-red-500">*</span>
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
@@ -304,10 +420,72 @@ export default function UserAccountForm({
               />
               {serverErrors?.lastName && <p className="text-[11px] text-red-500 mt-1">{serverErrors.lastName}</p>}
             </div>
+
+            <div className="sm:col-span-3">
+              <label className={labelClass}>Company Name</label>
+              <input
+                type="text"
+                name="companyName"
+                defaultValue={initialData?.companyName || initialData?.landlordData?.companyName || ""}
+                placeholder="e.g. Apex Property Investments Ltd"
+                className={inputClass}
+              />
+            </div>
           </div>
         </div>
 
+        <hr className="border-slate-100" />
 
+        {/* 2. Services Provided */}
+        <div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                Services Provided
+              </h3>
+              <p className="text-[11px] text-slate-500">Enable if services are provided to this client</p>
+            </div>
+            <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100/70 cursor-pointer transition select-none has-checked:border-indigo-500 has-checked:bg-indigo-50/50">
+              <input
+                type="checkbox"
+                checked={hasServices}
+                onChange={(e) => setHasServices(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500/20 border-slate-300"
+              />
+              <span className="text-xs font-semibold text-slate-700">Services Provided</span>
+            </label>
+          </div>
+
+          {hasServices && (
+            <div className="mt-3.5 pt-3.5 border-t border-slate-100">
+              <p className="text-[11px] text-slate-500 mb-2.5">Select the service(s) provided to this client:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {CLIENT_SERVICES.map((service) => {
+                  const isChecked = Array.isArray(initialData?.services)
+                    ? initialData.services.includes(service)
+                    : initialData?.service === service || initialData?.services === service;
+                  return (
+                    <label
+                      key={service}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer transition text-xs font-medium text-slate-700 select-none has-checked:border-indigo-600 has-checked:bg-indigo-50/40 has-checked:text-indigo-900"
+                    >
+                      <input
+                        type="checkbox"
+                        name="services"
+                        value={service}
+                        defaultChecked={isChecked}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500/20 border-slate-300"
+                      />
+                      <span>{service}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <hr className="border-slate-100" />
 
         {/* 3. Address Details */}
         <div>

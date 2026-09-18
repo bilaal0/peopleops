@@ -301,13 +301,39 @@ export default function StaffDetailPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Employment Details</h3>
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Employment & Personal Details</h3>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><dt className="text-gray-500 text-xs">Job Title</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.jobTitle || "—"}</dd></div>
                   <div><dt className="text-gray-500 text-xs">Joining Date</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.joiningDate ? new Date(staff.joiningDate).toLocaleDateString("en-GB") : "—"}</dd></div>
                   <div><dt className="text-gray-500 text-xs">Gender</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.gender || "—"}</dd></div>
+                  <div><dt className="text-gray-500 text-xs">Date of Birth (DOB)</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.dob ? new Date(staff.dob).toLocaleDateString("en-GB") : "—"}</dd></div>
+                  <div><dt className="text-gray-500 text-xs">National Insurance (NIC)</dt><dd className="font-medium text-gray-900 mt-0.5 uppercase">{staff.nic || staff.nationalInsuranceNumber || "—"}</dd></div>
+                  <div>
+                    <dt className="text-gray-500 text-xs">Salary</dt>
+                    <dd className="font-medium text-gray-900 mt-0.5">
+                      {staff.salary !== undefined && staff.salary !== null
+                        ? `£${Number(staff.salary).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="sm:col-span-2"><dt className="text-gray-500 text-xs">Certificate of Sponsorship (COS)</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.cos || staff.cosNumber || "—"}</dd></div>
                 </dl>
               </div>
+
+              <div className="pt-6 border-t border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Bank Details</h3>
+                {staff.bankDetails && (staff.bankDetails.accountName || staff.bankDetails.accountNumber || staff.bankDetails.sortCode || staff.bankDetails.bankName) ? (
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div><dt className="text-gray-500 text-xs">Account Name</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.bankDetails.accountName || "—"}</dd></div>
+                    <div><dt className="text-gray-500 text-xs">Bank Name</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.bankDetails.bankName || "—"}</dd></div>
+                    <div><dt className="text-gray-500 text-xs">Account Number</dt><dd className="font-mono font-medium text-gray-900 mt-0.5">{staff.bankDetails.accountNumber || "—"}</dd></div>
+                    <div><dt className="text-gray-500 text-xs">Sort Code</dt><dd className="font-mono font-medium text-gray-900 mt-0.5">{staff.bankDetails.sortCode || "—"}</dd></div>
+                  </dl>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No bank details provided.</p>
+                )}
+              </div>
+
               <div className="pt-6 border-t border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Address Information</h3>
                 <p className="text-sm text-gray-700">
@@ -322,7 +348,6 @@ export default function StaffDetailPage() {
               <div className="space-y-3 text-sm">
                 <div><span className="text-xs text-gray-500 block">Email Address</span><span className="font-medium text-gray-900 block mt-1 break-all">{staff.email}</span></div>
                 <div><span className="text-xs text-gray-500 block">Telephone Number</span><span className="font-medium text-gray-900">{staff.phone || staff.telephoneNo || "—"}</span></div>
-                <div><span className="text-xs text-gray-500 block">Created On</span><span className="font-medium text-gray-900">{staff.createdAt ? new Date(staff.createdAt).toLocaleDateString("en-GB") : "—"}</span></div>
               </div>
             </div>
           </div>

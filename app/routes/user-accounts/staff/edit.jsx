@@ -46,9 +46,28 @@ export async function action({ params, request }) {
   const lastName = formData.get("lastName")?.toString().trim();
   const gender = formData.get("gender")?.toString().trim();
 
+  const dobRaw = formData.get("dob")?.toString().trim();
+  const dob = dobRaw ? new Date(dobRaw) : null;
+  const nic = formData.get("nic")?.toString().trim().toUpperCase();
+
   const joiningDateRaw = formData.get("joiningDate")?.toString().trim();
   const joiningDate = joiningDateRaw ? new Date(joiningDateRaw) : undefined;
   const jobTitle = formData.get("jobTitle")?.toString().trim();
+  const salaryRaw = formData.get("salary")?.toString().trim();
+  const salary = salaryRaw && !isNaN(Number(salaryRaw)) ? Number(salaryRaw) : null;
+  const cos = formData.get("cos")?.toString().trim();
+
+  const bankAccountName = formData.get("bankAccountName")?.toString().trim();
+  const bankAccountNumber = formData.get("bankAccountNumber")?.toString().trim();
+  const bankSortCode = formData.get("bankSortCode")?.toString().trim();
+  const bankName = formData.get("bankName")?.toString().trim();
+
+  const bankDetails = {
+    accountName: bankAccountName || null,
+    accountNumber: bankAccountNumber || null,
+    sortCode: bankSortCode || null,
+    bankName: bankName || null,
+  };
 
   const city = formData.get("city")?.toString().trim() || "UK";
   const postcode = formData.get("postcode")?.toString().trim();
@@ -83,8 +102,15 @@ export async function action({ params, request }) {
       firstName,
       lastName,
       gender,
+      dob,
+      nationalInsuranceNumber: nic || null,
+      nic: nic || null,
       joiningDate,
       jobTitle,
+      salary,
+      cosNumber: cos || null,
+      cos: cos || null,
+      bankDetails,
       city,
       postTown: city,
       postcode,

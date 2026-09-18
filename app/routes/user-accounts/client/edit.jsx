@@ -38,9 +38,10 @@ export async function action({ params, request }) {
   const positionInCompany = formData.get("positionInCompany")?.toString().trim();
   const ethnicity = formData.get("ethnicity")?.toString().trim();
 
-  const isCompany = formData.get("isCompany") === "on";
   const companyName = formData.get("companyName")?.toString().trim() || null;
   const companyNumber = formData.get("companyNumber")?.toString().trim() || null;
+  const isCompany = Boolean(companyName || formData.get("isCompany") === "on");
+  const services = formData.getAll("services").map((s) => s.toString().trim()).filter(Boolean);
 
   const dob = formData.get("dob") ? new Date(formData.get("dob").toString()) : undefined;
   const gender = formData.get("gender")?.toString().trim();
@@ -64,6 +65,8 @@ export async function action({ params, request }) {
       firstName,
       middleName,
       lastName,
+      companyName,
+      services,
       phone,
       telephoneNo: phone,
       positionInCompany,
@@ -76,9 +79,9 @@ export async function action({ params, request }) {
       city: postTown,
       postcode,
       status,
-      "landlordData.isCompany": isCompany,
-      "landlordData.companyName": isCompany ? companyName : null,
-      "landlordData.companyNumber": isCompany ? companyNumber : null,
+      "landlordData.isCompany": Boolean(isCompany || companyName),
+      "landlordData.companyName": companyName || null,
+      "landlordData.companyNumber": companyNumber || null,
     });
 
     return redirect("/user-accounts/client");

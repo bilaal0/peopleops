@@ -49,7 +49,7 @@ export async function loader({ request }) {
       deleted: false,
       date: { $gte: todayStart, $lte: todayEnd },
     })
-      .populate("assignedTo", "firstName lastName")
+      .populate("assignedTo", "firstName lastName companyName landlordData")
       .sort({ startTime: 1 })
       .lean();
 
@@ -60,8 +60,8 @@ export async function loader({ request }) {
       startTime: t.startTime,
       endTime: t.endTime,
       assignedTo: t.assignedTo
-        ? `${t.assignedTo.firstName} ${t.assignedTo.lastName}`
-        : t.assignedToName || "",
+        ? (t.assignedTo.companyName || t.assignedTo.landlordData?.companyName || `${t.assignedTo.firstName} ${t.assignedTo.lastName}`.trim())
+        : (t.assignedToName || ""),
       taskStatus: t.taskStatus || "pending",
       taskNotes: t.taskNotes || "",
       taskReasonIfNotDone: t.taskReasonIfNotDone || "",

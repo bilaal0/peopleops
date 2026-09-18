@@ -40,10 +40,10 @@ export async function loader({ request }) {
 
   const [staffList, clientList, rotaEvents] = await Promise.all([
     User.find(staffQuery).select("firstName lastName jobTitle").sort({ firstName: 1 }).lean(),
-    User.find(clientQuery).select("firstName lastName positionInCompany").sort({ firstName: 1 }).lean(),
+    User.find(clientQuery).select("firstName lastName positionInCompany companyName landlordData").sort({ companyName: 1, firstName: 1 }).lean(),
     Rota.find(rotaFilter)
       .populate("employee", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("assignedTo", "firstName lastName companyName landlordData")
       .sort({ start: 1 })
       .lean(),
   ]);
@@ -54,11 +54,15 @@ export async function loader({ request }) {
     label: u.jobTitle || "Staff",
   }));
 
-  const mappedClients = clientList.map((u) => ({
-    _id: u._id.toString(),
-    name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
-    label: u.positionInCompany || "Client",
-  }));
+  const mappedClients = clientList.map((u) => {
+    const company = u.companyName || u.landlordData?.companyName;
+    const ownerName = `${u.firstName || ""} ${u.lastName || ""}`.trim();
+    return {
+      _id: u._id.toString(),
+      name: company || ownerName || "Unnamed Client",
+      label: company && ownerName ? ownerName : (u.positionInCompany || "Client"),
+    };
+  });
 
   // Combined list for the Employee dropdown — staff first, then clients
   const employeeList = [...mappedStaff, ...mappedClients].sort((a, b) =>
@@ -88,6 +92,11 @@ export async function loader({ request }) {
       const startStr = calDate && e.startTime ? `${calDate}T${e.startTime}:00` : calDate;
       const endStr   = calDate && e.endTime   ? `${calDate}T${e.endTime}:00`   : calDate;
 
+      const assignedToUser = e.assignedTo;
+      const assignedToCompanyName = assignedToUser ? (assignedToUser.companyName || assignedToUser.landlordData?.companyName) : "";
+      const assignedToPersonName = assignedToUser ? `${assignedToUser.firstName || ""} ${assignedToUser.lastName || ""}`.trim() : "";
+      const assignedToDisplayName = assignedToCompanyName || assignedToPersonName || e.assignedToName || "";
+
       return {
         id:    e._id.toString(),
         title: `${e.startTime} – ${e.endTime}: ${e.employeeName || ""}`,
@@ -99,7 +108,7 @@ export async function loader({ request }) {
           employeeId:     e.employee?._id?.toString() || "",
           employeeName:   e.employeeName   || "",
           assignedToId:   e.assignedTo?._id?.toString() || "",
-          assignedToName: e.assignedToName || "",
+          assignedToName: assignedToDisplayName,
           startTime:      e.startTime,
           endTime:        e.endTime,
           repeat:         e.repeat,
@@ -152,10 +161,12 @@ export async function action({ request }) {
   // Resolve user names
   const [employee, client] = await Promise.all([
     User.findById(employeeId).select("firstName lastName").lean(),
-    assignedToId ? User.findById(assignedToId).select("firstName lastName").lean() : null,
+    assignedToId ? User.findById(assignedToId).select("firstName lastName companyName landlordData").lean() : null,
   ]);
   const employeeName   = employee ? `${employee.firstName || ""} ${employee.lastName || ""}`.trim() : "";
-  const assignedToName = client   ? `${client.firstName || ""} ${client.lastName || ""}`.trim()   : "";
+  const clientCompany  = client ? (client.companyName || client.landlordData?.companyName) : "";
+  const clientPerson   = client ? `${client.firstName || ""} ${client.lastName || ""}`.trim() : "";
+  const assignedToName = clientCompany || clientPerson || "";
 
   // Parse YYYY-MM-DD as LOCAL midnight — new Date("YYYY-MM-DD") is UTC midnight
   // which shifts to the previous day in timezones ahead of UTC (e.g. UTC+5).

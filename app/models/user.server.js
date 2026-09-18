@@ -24,6 +24,8 @@ const userSchema = new Schema(
     middleName: { type: String },
     telephoneNo: { type: String },
     positionInCompany: { type: String },
+    companyName: { type: String, trim: true },
+    services: [{ type: String, trim: true }],
 
     // Enforce known roles only
     roles: [{ type: String, required: true }],
@@ -32,6 +34,19 @@ const userSchema = new Schema(
     dob: { type: Date },
     joiningDate: { type: Date, default: Date.now },
     gender: { type: String },
+
+    // Staff & Employee Specific Details
+    nationalInsuranceNumber: { type: String, trim: true },
+    nic: { type: String, trim: true },
+    salary: { type: Number, default: null },
+    cosNumber: { type: String, trim: true },
+    cos: { type: String, trim: true },
+    bankDetails: {
+      accountName: { type: String, trim: true, default: null },
+      accountNumber: { type: String, trim: true, default: null },
+      sortCode: { type: String, trim: true, default: null },
+      bankName: { type: String, trim: true, default: null },
+    },
 
     emailVerified: { type: Boolean, default: false },
     phone: { type: String, default: "" },

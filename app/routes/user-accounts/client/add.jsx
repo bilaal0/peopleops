@@ -26,9 +26,10 @@ export async function action({ request }) {
   const positionInCompany = formData.get("positionInCompany")?.toString().trim();
   const ethnicity = formData.get("ethnicity")?.toString().trim();
 
-  const isCompany = formData.get("isCompany") === "on";
   const companyName = formData.get("companyName")?.toString().trim() || null;
   const companyNumber = formData.get("companyNumber")?.toString().trim() || null;
+  const isCompany = Boolean(companyName || formData.get("isCompany") === "on");
+  const services = formData.getAll("services").map((s) => s.toString().trim()).filter(Boolean);
 
   const dob = formData.get("dob") ? new Date(formData.get("dob").toString()) : undefined;
   const gender = formData.get("gender")?.toString().trim();
@@ -61,6 +62,8 @@ export async function action({ request }) {
       firstName,
       middleName,
       lastName,
+      companyName,
+      services,
       email,
       phone,
       telephoneNo: phone,
@@ -78,9 +81,9 @@ export async function action({ request }) {
       organizationId: currentUser.organizationId || null,
       addedBy: currentUser._id,
       landlordData: {
-        isCompany,
-        companyName: isCompany ? companyName : null,
-        companyNumber: isCompany ? companyNumber : null,
+        isCompany: Boolean(isCompany || companyName),
+        companyName: companyName || null,
+        companyNumber: companyNumber || null,
       },
     });
 
