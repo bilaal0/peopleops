@@ -69,26 +69,31 @@ export async function loader({ request }) {
     a.name.localeCompare(b.name)
   );
 
+  const toLocalDateOnly = (d) => {
+    if (!d) return null;
+    const dt = new Date(d);
+    const yyyy = dt.getFullYear();
+    const mm   = String(dt.getMonth() + 1).padStart(2, "0");
+    const dd   = String(dt.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   return {
     employeeList,
     staffList: mappedStaff,
     clientList: mappedClients,
-    rotaEvents: rotaEvents.map((e) => {
-      // Extract YYYY-MM-DD from the stored `date` field (local midnight).
-      // This is the canonical user-entered date — most reliable source for the
-      // calendar date cell regardless of UTC offset or DST edge cases.
-      const toLocalDateOnly = (d) => {
-        if (!d) return null;
-        const dt = new Date(d);
-        const yyyy = dt.getFullYear();
-        const mm   = String(dt.getMonth() + 1).padStart(2, "0");
-        const dd   = String(dt.getDate()).padStart(2, "0");
-        return `${yyyy}-${mm}-${dd}`;
-      };
-
-      // Use the date field as the authoritative calendar date.
-      // Then append the HH:MM strings directly — no UTC conversion involved.
-      const calDate = toLocalDateOnly(e.date || e.start);
+    rotaEvents: rotaEvents
+      .filter((e) => {
+        const calDate = toLocalDateOnly(e.date || e.start);
+        if (!calDate) return true;
+        const [yyyy, mm, dd] = calDate.split("-").map(Number);
+        const dayOfWeek = new Date(yyyy, mm - 1, dd).getDay();
+        return dayOfWeek !== 0 && dayOfWeek !== 6; // Exclude Sunday (0) and Saturday (6)
+      })
+      .map((e) => {
+        // Use the date field as the authoritative calendar date.
+        // Then append the HH:MM strings directly — no UTC conversion involved.
+        const calDate = toLocalDateOnly(e.date || e.start);
       const startStr = calDate && e.startTime ? `${calDate}T${e.startTime}:00` : calDate;
       const endStr   = calDate && e.endTime   ? `${calDate}T${e.endTime}:00`   : calDate;
 

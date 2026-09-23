@@ -65,6 +65,18 @@ export default function ClientIndexPage() {
         },
       },
       {
+        accessorKey: "companyName",
+        header: "Company Name",
+        cell: ({ row }) => {
+          const company = row.original.companyName;
+          return company ? (
+            <span className="font-medium text-gray-800">{company}</span>
+          ) : (
+            <span className="text-gray-400">—</span>
+          );
+        },
+      },
+      {
         accessorKey: "email",
         header: "Email",
         cell: ({ row }) => row.original.email || <span className="text-gray-400">—</span>,
