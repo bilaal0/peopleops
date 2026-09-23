@@ -50,9 +50,6 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
         events: rotaEvents,
         height: "auto",
         dayMaxEvents: 3,
-        weekends: false,
-        firstDay: 1,
-        hiddenDays: [0, 6],
 
         // List-view specific options
         listDaySideFormat: { weekday: "long" },

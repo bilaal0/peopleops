@@ -82,18 +82,10 @@ export async function loader({ request }) {
     employeeList,
     staffList: mappedStaff,
     clientList: mappedClients,
-    rotaEvents: rotaEvents
-      .filter((e) => {
-        const calDate = toLocalDateOnly(e.date || e.start);
-        if (!calDate) return true;
-        const [yyyy, mm, dd] = calDate.split("-").map(Number);
-        const dayOfWeek = new Date(yyyy, mm - 1, dd).getDay();
-        return dayOfWeek !== 0 && dayOfWeek !== 6; // Exclude Sunday (0) and Saturday (6)
-      })
-      .map((e) => {
-        // Use the date field as the authoritative calendar date.
-        // Then append the HH:MM strings directly — no UTC conversion involved.
-        const calDate = toLocalDateOnly(e.date || e.start);
+    rotaEvents: rotaEvents.map((e) => {
+      // Use the date field as the authoritative calendar date.
+      // Then append the HH:MM strings directly — no UTC conversion involved.
+      const calDate = toLocalDateOnly(e.date || e.start);
       const startStr = calDate && e.startTime ? `${calDate}T${e.startTime}:00` : calDate;
       const endStr   = calDate && e.endTime   ? `${calDate}T${e.endTime}:00`   : calDate;
 
