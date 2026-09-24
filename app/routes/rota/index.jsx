@@ -13,6 +13,9 @@ export async function loader({ request }) {
   await connect();
 
   const isSuperAdmin = currentUser.roles?.includes("SUPER_ADMIN");
+  const canManageRota = currentUser.roles?.some((r) =>
+    ["SUPER_ADMIN", "ADMIN", "MASTER_ADMIN", "INITIAL_ADMIN", "REGISTERED_MANAGER"].includes(r)
+  );
 
   // Staff users — same query as user-accounts/staff/index
   const staffQuery = {
@@ -32,15 +35,22 @@ export async function loader({ request }) {
     clientQuery.organizationId = currentUser.organizationId;
   }
 
-  // Rota events scoped to organization
+  // Rota events scoped to organization, and to the staff member if not admin/manager
   const rotaFilter = { deleted: false };
   if (!isSuperAdmin && currentUser.organizationId) {
     rotaFilter.organizationId = currentUser.organizationId;
   }
+  if (!canManageRota) {
+    rotaFilter.employee = currentUser.userId;
+  }
 
   const [staffList, clientList, rotaEvents] = await Promise.all([
-    User.find(staffQuery).select("firstName lastName jobTitle").sort({ firstName: 1 }).lean(),
-    User.find(clientQuery).select("firstName lastName positionInCompany companyName landlordData").sort({ companyName: 1, firstName: 1 }).lean(),
+    canManageRota
+      ? User.find(staffQuery).select("firstName lastName jobTitle").sort({ firstName: 1 }).lean()
+      : [],
+    canManageRota
+      ? User.find(clientQuery).select("firstName lastName positionInCompany companyName landlordData").sort({ companyName: 1, firstName: 1 }).lean()
+      : [],
     Rota.find(rotaFilter)
       .populate("employee", "firstName lastName")
       .populate("assignedTo", "firstName lastName companyName landlordData")
@@ -56,11 +66,10 @@ export async function loader({ request }) {
 
   const mappedClients = clientList.map((u) => {
     const company = u.companyName || u.landlordData?.companyName;
-    const ownerName = `${u.firstName || ""} ${u.lastName || ""}`.trim();
     return {
       _id: u._id.toString(),
-      name: company || ownerName || "Unnamed Client",
-      label: company && ownerName ? ownerName : (u.positionInCompany || "Client"),
+      name: company || "Unnamed Client",
+      label: "Client",
     };
   });
 
@@ -79,6 +88,7 @@ export async function loader({ request }) {
   };
 
   return {
+    canManageRota: Boolean(canManageRota),
     employeeList,
     staffList: mappedStaff,
     clientList: mappedClients,
@@ -126,6 +136,17 @@ export async function loader({ request }) {
 export async function action({ request }) {
   const currentUser = await getUserFromRequest(request);
   if (!currentUser) return redirect("/login");
+
+  const canManageRota = currentUser.roles?.some((r) =>
+    ["SUPER_ADMIN", "ADMIN", "MASTER_ADMIN", "INITIAL_ADMIN", "REGISTERED_MANAGER"].includes(r)
+  );
+
+  if (!canManageRota) {
+    return data(
+      { errors: { submit: "Unauthorized: You do not have permission to add, edit, or delete rota entries." } },
+      { status: 403 }
+    );
+  }
 
   await connect();
 
@@ -266,7 +287,7 @@ export async function action({ request }) {
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function RotaIndexPage() {
-  const { employeeList, staffList, clientList, rotaEvents } = useLoaderData();
+  const { canManageRota, employeeList, staffList, clientList, rotaEvents } = useLoaderData();
   const actionData = useActionData();
 
   return (
@@ -276,9 +297,13 @@ export default function RotaIndexPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Rota System</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {canManageRota ? "Rota System" : "My Rota"}
+              </h1>
               <p className="mt-1 text-sm text-gray-600">
-                Manage staff schedules and client assignments
+                {canManageRota
+                  ? "Manage staff schedules and client assignments"
+                  : "View your assigned shifts and schedule"}
               </p>
             </div>
           </div>
@@ -287,6 +312,7 @@ export default function RotaIndexPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <RotaCalendar
+          canManageRota={canManageRota}
           employeeList={employeeList}
           staffList={staffList}
           clientList={clientList}

@@ -5,6 +5,7 @@ import { connect } from "../config/db.server.js";
 import { Organization } from "../models/organization.server.js";
 import { User } from "../models/user.server.js";
 import { Attendance } from "../models/attendance.server.js";
+import { Rota } from "../models/rota.server.js";
 import { getOrganizationDashboardData } from "../utils/dashboard.server.js";
 import SuperAdminDashboard from "../components/dashboard/SuperAdminDashboard.jsx";
 import OrganizationDashboard from "../components/dashboard/OrganizationDashboard.jsx";
@@ -21,7 +22,10 @@ export async function loader({ request }) {
   if (!user) return redirect("/login");
 
   const isSuperAdmin = user.roles?.includes("SUPER_ADMIN");
-  const isEmployeeOnly = user.roles?.includes("EMPLOYEE") && !user.roles?.includes("ADMIN") && !user.roles?.includes("SUPER_ADMIN");
+  const canManage = user.roles?.some((r) =>
+    ["SUPER_ADMIN", "ADMIN", "MASTER_ADMIN", "INITIAL_ADMIN", "REGISTERED_MANAGER"].includes(r)
+  );
+  const isEmployeeOnly = !canManage;
 
   await connect();
 
@@ -61,17 +65,60 @@ export async function loader({ request }) {
   const todayAttendance = latestAttendance ? {
     _id: latestAttendance._id.toString(),
     status: latestAttendance.status,
+    markedAt: latestAttendance.markedAt ? latestAttendance.markedAt.toISOString() : (latestAttendance.clockInTime ? latestAttendance.clockInTime.toISOString() : null),
     clockInTime: latestAttendance.clockInTime ? latestAttendance.clockInTime.toISOString() : null,
     clockOutTime: latestAttendance.clockOutTime ? latestAttendance.clockOutTime.toISOString() : null,
     totalHours: latestAttendance.totalHours || 0,
     notes: latestAttendance.notes || "",
   } : null;
 
-  // If it's a staff dashboard, filter todayRota to only their shifts
+  let attendanceHistory = [];
+  let previousTasks = [];
+
+  // If it's a staff dashboard, filter todayRota and load past records
   if (isEmployeeOnly && user.userId) {
     dashboardData.todayRota = (dashboardData.todayRota || []).filter(
       r => r.employeeId === user.userId.toString()
     );
+
+    const [pastAttendance, pastRota] = await Promise.all([
+      Attendance.find({ user: user.userId })
+        .sort({ date: -1, createdAt: -1 })
+        .limit(20)
+        .lean(),
+      Rota.find({
+        employee: user.userId,
+        deleted: false,
+        date: { $lt: todayStart },
+      })
+        .populate("assignedTo", "firstName lastName companyName landlordData")
+        .sort({ date: -1, startTime: -1 })
+        .limit(20)
+        .lean(),
+    ]);
+
+    attendanceHistory = pastAttendance.map((rec) => ({
+      _id: rec._id.toString(),
+      date: rec.date ? rec.date.toISOString() : rec.createdAt?.toISOString() || null,
+      status: rec.status || "marked",
+      markedAt: rec.markedAt?.toISOString() || rec.clockInTime?.toISOString() || rec.createdAt?.toISOString() || null,
+      notes: rec.notes || "",
+    }));
+
+    previousTasks = pastRota.map((t) => ({
+      _id: t._id.toString(),
+      title: t.title || "Assigned Shift",
+      description: t.description || "",
+      date: t.date ? t.date.toISOString() : null,
+      startTime: t.startTime,
+      endTime: t.endTime,
+      assignedTo: t.assignedTo
+        ? (t.assignedTo.companyName || t.assignedTo.landlordData?.companyName || `${t.assignedTo.firstName} ${t.assignedTo.lastName}`.trim())
+        : (t.assignedToName || ""),
+      taskStatus: t.taskStatus || "pending",
+      taskNotes: t.taskNotes || "",
+      taskReasonIfNotDone: t.taskReasonIfNotDone || "",
+    }));
   }
 
   return {
@@ -81,11 +128,23 @@ export async function loader({ request }) {
     isEmployeeOnly,
     dashboardData,
     todayAttendance,
+    attendanceHistory,
+    previousTasks,
   };
 }
 
 export default function Dashboard() {
-  const { user, organization, stats, isSuperAdmin, isEmployeeOnly, dashboardData, todayAttendance } = useLoaderData();
+  const {
+    user,
+    organization,
+    stats,
+    isSuperAdmin,
+    isEmployeeOnly,
+    dashboardData,
+    todayAttendance,
+    attendanceHistory,
+    previousTasks,
+  } = useLoaderData();
 
   if (isSuperAdmin && !organization) {
     return <SuperAdminDashboard stats={stats} />;
@@ -98,6 +157,8 @@ export default function Dashboard() {
         organization={organization}
         dashboardData={dashboardData}
         todayAttendance={todayAttendance}
+        attendanceHistory={attendanceHistory}
+        previousTasks={previousTasks}
       />
     );
   }

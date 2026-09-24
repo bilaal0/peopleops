@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRevalidator } from "react-router";
 import AddRotaModal from "./AddRotaModal.jsx";
 import EditRotaModal from "./EditRotaModal.jsx";
+import EventDetailModal from "./EventDetailModal.jsx";
 
-export default function RotaCalendar({ employeeList, staffList, clientList, rotaEvents, serverError }) {
+export default function RotaCalendar({ canManageRota = true, employeeList, staffList, clientList, rotaEvents, serverError }) {
   const { revalidate } = useRevalidator();
   const calendarElRef = useRef(null);
   const calendarRef   = useRef(null);
@@ -11,6 +12,7 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [viewingEvent, setViewingEvent] = useState(null);
   const [currentView, setCurrentView]   = useState("dayGridMonth");
   const [title, setTitle]               = useState("");
 
@@ -57,17 +59,24 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
         noEventsContent: "No rota entries for this period.",
 
         dateClick: (info) => {
-          setSelectedDate(info.dateStr);
-          setShowAddModal(true);
+          if (canManageRota) {
+            setSelectedDate(info.dateStr);
+            setShowAddModal(true);
+          }
         },
         eventClick: (info) => {
-          setEditingEvent({
+          const eventData = {
             id: info.event.id,
             title: info.event.title,
             start: info.event.startStr,
             end: info.event.endStr,
             ...info.event.extendedProps,
-          });
+          };
+          if (canManageRota) {
+            setEditingEvent(eventData);
+          } else {
+            setViewingEvent(eventData);
+          }
         },
         datesSet: (info) => {
           setCurrentView(info.view.type);
@@ -155,7 +164,7 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
       calendarRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [canManageRota]);
 
   // ── Sync events whenever rotaEvents changes ────────────────────────────────
   // Remove ALL event sources (not just events) before adding the fresh list.
@@ -221,12 +230,14 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
           })}
         </div>
 
-        <button
-          onClick={() => { setSelectedDate(null); setShowAddModal(true); }}
-          className="px-4 py-2 rounded-lg bg-[#1e3a5f] text-white text-xs font-semibold hover:bg-[#162d4a] transition cursor-pointer"
-        >
-          + Add Rota
-        </button>
+        {canManageRota && (
+          <button
+            onClick={() => { setSelectedDate(null); setShowAddModal(true); }}
+            className="px-4 py-2 rounded-lg bg-[#1e3a5f] text-white text-xs font-semibold hover:bg-[#162d4a] transition cursor-pointer"
+          >
+            + Add Rota
+          </button>
+        )}
       </div>
 
       {/* ── Calendar wrapper — ALWAYS in DOM ── */}
@@ -263,8 +274,8 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
         </div>
       </div>
 
-      {/* ── Add Rota Modal ── */}
-      {showAddModal && (
+      {/* ── Add Rota Modal (Admin/Manager only) ── */}
+      {canManageRota && showAddModal && (
         <AddRotaModal
           employeeList={staffList}
           assignedToList={clientList}
@@ -275,14 +286,23 @@ export default function RotaCalendar({ employeeList, staffList, clientList, rota
         />
       )}
 
-      {/* ── Edit Rota Modal ── */}
-      {editingEvent && (
+      {/* ── Edit Rota Modal (Admin/Manager only) ── */}
+      {canManageRota && editingEvent && (
         <EditRotaModal
           event={editingEvent}
           employeeList={staffList}
           assignedToList={clientList}
           onClose={() => setEditingEvent(null)}
           onSuccess={() => { setEditingEvent(null); revalidate(); }}
+        />
+      )}
+
+      {/* ── View Rota Detail Modal (Staff read-only view) ── */}
+      {!canManageRota && viewingEvent && (
+        <EventDetailModal
+          event={viewingEvent}
+          canDelete={false}
+          onClose={() => setViewingEvent(null)}
         />
       )}
     </div>

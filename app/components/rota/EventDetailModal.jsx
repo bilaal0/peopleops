@@ -34,10 +34,10 @@ const Row = ({ label, value }) => (
   </div>
 );
 
-export default function EventDetailModal({ event, onClose, onDelete }) {
+export default function EventDetailModal({ event, onClose, onDelete, canDelete = false }) {
   const confirmDelete = () => {
     if (window.confirm("Are you sure you want to delete this rota entry?")) {
-      onDelete(event.id);
+      onDelete?.(event.id);
     }
   };
 
@@ -55,7 +55,7 @@ export default function EventDetailModal({ event, onClose, onDelete }) {
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: "#1e3a5f" }}
             />
-            <h2 className="text-base font-bold text-gray-900">Rota Details</h2>
+            <h2 className="text-base font-bold text-gray-900">Shift Details</h2>
           </div>
           <button
             onClick={onClose}
@@ -71,7 +71,7 @@ export default function EventDetailModal({ event, onClose, onDelete }) {
           <Row label="Start Time" value={startDisplay} />
           <Row label="End Time" value={endDisplay} />
           <Row label="Employee" value={event.employeeName} />
-          <Row label="Assigned To" value={event.assignedToName} />
+          {event.assignedToName && <Row label="Assigned To" value={event.assignedToName} />}
           {event.description && <Row label="Description" value={event.description} />}
           {event.repeat && event.repeat !== "none" && (
             <>
@@ -96,13 +96,15 @@ export default function EventDetailModal({ event, onClose, onDelete }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 px-6 pb-6">
-          <button
-            onClick={confirmDelete}
-            className="px-5 py-2 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm font-semibold hover:bg-red-100 transition cursor-pointer"
-          >
-            Delete
-          </button>
+        <div className="flex items-center justify-end gap-3 px-6 pb-6">
+          {canDelete && onDelete && (
+            <button
+              onClick={confirmDelete}
+              className="px-5 py-2 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm font-semibold hover:bg-red-100 transition cursor-pointer"
+            >
+              Delete
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"

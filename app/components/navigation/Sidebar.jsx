@@ -19,7 +19,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const location = useLocation();
   const [openSections, setOpenSections] = useState({});
   const isSuperAdmin = user?.roles?.includes("SUPER_ADMIN");
-  const isEmployeeOnly = user?.roles?.includes("EMPLOYEE") && !user?.roles?.includes("ADMIN") && !user?.roles?.includes("SUPER_ADMIN");
+  const canManage = user?.roles?.some((r) =>
+    ["SUPER_ADMIN", "ADMIN", "MASTER_ADMIN", "INITIAL_ADMIN", "REGISTERED_MANAGER"].includes(r)
+  );
+  const isEmployeeOnly = !canManage;
 
   const isActive = (href) => {
     if (href === "/dashboard") {

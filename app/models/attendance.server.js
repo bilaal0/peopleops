@@ -11,11 +11,12 @@ const attendanceSchema = new Schema(
     date: { type: Date, required: true }, // Start of local date / day
     clockInTime: { type: Date },
     clockOutTime: { type: Date },
+    markedAt: { type: Date },
     totalHours: { type: Number, default: 0 }, // Total duration in hours (e.g. 7.5)
     status: {
       type: String,
-      enum: ["clocked_in", "clocked_out"],
-      default: "clocked_in",
+      enum: ["marked", "present", "clocked_in", "clocked_out"],
+      default: "marked",
     },
     notes: { type: String, default: "" },
   },

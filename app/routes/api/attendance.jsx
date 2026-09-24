@@ -46,60 +46,71 @@ export async function action({ request }) {
   const notes = (formData.get("notes") || "").toString().trim();
   const { start, end } = getTodayRange();
 
-  if (intent === "clock_in") {
-    // Check if already clocked in
-    const active = await Attendance.findOne({
+  if (intent === "mark_attendance" || intent === "clock_in") {
+    // Check if already marked for today
+    const existing = await Attendance.findOne({
       user: user.userId,
-      status: "clocked_in",
       date: { $gte: start, $lte: end },
     });
 
-    if (active) {
-      return data({ error: "You are already clocked in for today." }, { status: 400 });
+    if (existing) {
+      return data({ error: "Attendance has already been marked for today." }, { status: 400 });
     }
 
     const todayLocalMidnight = new Date();
     todayLocalMidnight.setHours(0, 0, 0, 0);
 
     const userName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.name || "Staff";
+    const now = new Date();
 
     const record = await Attendance.create({
       user: user.userId,
       userName,
       organizationId: user.organizationId || null,
       date: todayLocalMidnight,
-      clockInTime: new Date(),
-      status: "clocked_in",
+      clockInTime: now,
+      markedAt: now,
+      status: "marked",
       notes,
     });
 
-    return data({ success: true, message: "Clocked in successfully.", record });
+    return data({
+      success: true,
+      message: "Attendance marked successfully.",
+      record: {
+        _id: record._id.toString(),
+        status: record.status,
+        markedAt: record.markedAt ? record.markedAt.toISOString() : now.toISOString(),
+        clockInTime: record.clockInTime ? record.clockInTime.toISOString() : now.toISOString(),
+        notes: record.notes || "",
+      },
+    });
   }
 
   if (intent === "clock_out") {
     const active = await Attendance.findOne({
       user: user.userId,
-      status: "clocked_in",
       date: { $gte: start, $lte: end },
     }).sort({ createdAt: -1 });
 
     if (!active) {
-      return data({ error: "No active clock-in session found to clock out from." }, { status: 400 });
+      return data({ error: "No attendance session found for today." }, { status: 400 });
     }
 
     const clockOutTime = new Date();
-    const durationMs = clockOutTime.getTime() - new Date(active.clockInTime).getTime();
+    const startTime = active.clockInTime || active.markedAt || active.createdAt;
+    const durationMs = clockOutTime.getTime() - new Date(startTime).getTime();
     const totalHours = Math.max(0, parseFloat((durationMs / (1000 * 60 * 60)).toFixed(2)));
 
     active.clockOutTime = clockOutTime;
     active.totalHours = totalHours;
-    active.status = "clocked_out";
+    active.status = "marked";
     if (notes) {
       active.notes = active.notes ? `${active.notes}\n${notes}` : notes;
     }
     await active.save();
 
-    return data({ success: true, message: "Clocked out successfully.", record: active });
+    return data({ success: true, message: "Attendance updated.", record: active });
   }
 
   return data({ error: "Invalid intent" }, { status: 400 });

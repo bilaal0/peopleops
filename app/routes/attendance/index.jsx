@@ -17,46 +17,68 @@ export async function loader({ request }) {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  // Today's attendance record
+  // Today's attendance record & full attendance history
   let todayAttendance = null;
+  let attendanceHistory = [];
   try {
-    const attendanceRecord = await Attendance.findOne({
+    const attendanceRecords = await Attendance.find({
       user: user.userId,
-      date: { $gte: todayStart, $lte: todayEnd },
     })
-      .sort({ createdAt: -1 })
+      .sort({ date: -1, createdAt: -1 })
+      .limit(100)
       .lean();
 
-    if (attendanceRecord) {
-      todayAttendance = {
-        _id: attendanceRecord._id.toString(),
-        status: attendanceRecord.status,
-        clockInTime: attendanceRecord.clockInTime?.toISOString() || null,
-        clockOutTime: attendanceRecord.clockOutTime?.toISOString() || null,
-        totalHours: attendanceRecord.totalHours || 0,
-        notes: attendanceRecord.notes || "",
+    attendanceHistory = attendanceRecords.map((rec) => {
+      const isToday = rec.date && new Date(rec.date) >= todayStart && new Date(rec.date) <= todayEnd;
+      const item = {
+        _id: rec._id.toString(),
+        date: rec.date ? rec.date.toISOString() : rec.createdAt?.toISOString() || null,
+        status: rec.status || "marked",
+        markedAt: rec.markedAt?.toISOString() || rec.clockInTime?.toISOString() || rec.createdAt?.toISOString() || null,
+        clockInTime: rec.clockInTime?.toISOString() || null,
+        clockOutTime: rec.clockOutTime?.toISOString() || null,
+        totalHours: rec.totalHours || 0,
+        notes: rec.notes || "",
+        isToday,
       };
-    }
+      if (isToday && !todayAttendance) {
+        todayAttendance = item;
+      }
+      return item;
+    });
   } catch (err) {
     console.error("[attendance loader] attendance query failed:", err.message);
   }
 
-  // Today's rota tasks assigned to this staff member
+  // Today's rota tasks & Previous rota tasks assigned to this staff member
   let tasks = [];
+  let previousTasks = [];
   try {
-    const rotaTasks = await Rota.find({
-      employee: user.userId,
-      deleted: false,
-      date: { $gte: todayStart, $lte: todayEnd },
-    })
-      .populate("assignedTo", "firstName lastName companyName landlordData")
-      .sort({ startTime: 1 })
-      .lean();
+    const [todayRotaTasks, pastRotaTasks] = await Promise.all([
+      Rota.find({
+        employee: user.userId,
+        deleted: false,
+        date: { $gte: todayStart, $lte: todayEnd },
+      })
+        .populate("assignedTo", "firstName lastName companyName landlordData")
+        .sort({ startTime: 1 })
+        .lean(),
+      Rota.find({
+        employee: user.userId,
+        deleted: false,
+        date: { $lt: todayStart },
+      })
+        .populate("assignedTo", "firstName lastName companyName landlordData")
+        .sort({ date: -1, startTime: -1 })
+        .limit(100)
+        .lean(),
+    ]);
 
-    tasks = rotaTasks.map((t) => ({
+    const formatTask = (t) => ({
       _id: t._id.toString(),
       title: t.title || "Assigned Shift",
       description: t.description || "",
+      date: t.date ? t.date.toISOString() : null,
       startTime: t.startTime,
       endTime: t.endTime,
       assignedTo: t.assignedTo
@@ -66,12 +88,15 @@ export async function loader({ request }) {
       taskNotes: t.taskNotes || "",
       taskReasonIfNotDone: t.taskReasonIfNotDone || "",
       taskUpdatedAt: t.taskUpdatedAt ? t.taskUpdatedAt.toISOString() : null,
-    }));
+    });
+
+    tasks = todayRotaTasks.map(formatTask);
+    previousTasks = pastRotaTasks.map(formatTask);
   } catch (err) {
     console.error("[attendance loader] rota query failed:", err.message);
   }
 
-  return data({ user, todayAttendance, tasks });
+  return data({ user, todayAttendance, tasks, previousTasks, attendanceHistory });
 }
 
 export async function action({ request }) {
@@ -93,6 +118,7 @@ export async function action({ request }) {
   }
 
   const intent = formData.get("_intent")?.toString();
+  const notes = (formData.get("notes") || "").toString().trim();
   console.log("[attendance action] intent:", intent, "userId:", user.userId);
 
   const todayStart = new Date();
@@ -100,17 +126,16 @@ export async function action({ request }) {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  // ── Clock In ───────────────────────────────────────────────────────────────
-  if (intent === "clock_in") {
+  // ── Mark Attendance ────────────────────────────────────────────────────────
+  if (intent === "mark_attendance" || intent === "clock_in") {
     try {
-      const alreadyIn = await Attendance.findOne({
+      const alreadyMarked = await Attendance.findOne({
         user: user.userId,
-        status: "clocked_in",
         date: { $gte: todayStart, $lte: todayEnd },
       });
 
-      if (alreadyIn) {
-        return data({ error: "You are already clocked in for today." }, { status: 400 });
+      if (alreadyMarked) {
+        return data({ error: "Attendance has already been marked for today." }, { status: 400 });
       }
 
       // Get full name from DB for the record
@@ -122,49 +147,24 @@ export async function action({ request }) {
 
       const todayMidnight = new Date();
       todayMidnight.setHours(0, 0, 0, 0);
+      const now = new Date();
 
       const record = await Attendance.create({
         user: user.userId,
         userName,
         organizationId: user.organizationId || null,
         date: todayMidnight,
-        clockInTime: new Date(),
-        status: "clocked_in",
+        clockInTime: now,
+        markedAt: now,
+        status: "marked",
+        notes,
       });
 
-      console.log("[clock_in] Created attendance record:", record._id.toString());
-      return data({ success: true, action: "clock_in" });
+      console.log("[mark_attendance] Created attendance record:", record._id.toString());
+      return data({ success: true, action: "mark_attendance" });
     } catch (err) {
-      console.error("[clock_in] Error:", err.message, err);
-      return data({ error: `Clock in failed: ${err.message}` }, { status: 500 });
-    }
-  }
-
-  // ── Clock Out ──────────────────────────────────────────────────────────────
-  if (intent === "clock_out") {
-    try {
-      const active = await Attendance.findOne({
-        user: user.userId,
-        status: "clocked_in",
-        date: { $gte: todayStart, $lte: todayEnd },
-      }).sort({ createdAt: -1 });
-
-      if (!active) {
-        return data({ error: "No active clock-in found for today." }, { status: 400 });
-      }
-
-      const clockOutTime = new Date();
-      const durationMs = clockOutTime.getTime() - new Date(active.clockInTime).getTime();
-      active.clockOutTime = clockOutTime;
-      active.totalHours = parseFloat((durationMs / (1000 * 60 * 60)).toFixed(2));
-      active.status = "clocked_out";
-      await active.save();
-
-      console.log("[clock_out] Updated record:", active._id.toString(), "hours:", active.totalHours);
-      return data({ success: true, action: "clock_out" });
-    } catch (err) {
-      console.error("[clock_out] Error:", err.message, err);
-      return data({ error: `Clock out failed: ${err.message}` }, { status: 500 });
+      console.error("[mark_attendance] Error:", err.message, err);
+      return data({ error: `Marking attendance failed: ${err.message}` }, { status: 500 });
     }
   }
 

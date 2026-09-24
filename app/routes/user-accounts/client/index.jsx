@@ -49,33 +49,22 @@ export default function ClientIndexPage() {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "firstName",
-        header: "Name",
+        accessorKey: "companyName",
+        header: "Company Name",
         cell: ({ row }) => {
           const c = row.original;
-          const fullName = `${c.title ? c.title + " " : ""}${c.firstName} ${c.lastName}`.trim();
+          const company = c.companyName || "Unnamed Company";
           return (
             <Link
               to={`/user-accounts/client/${c._id}`}
               className="font-semibold text-gray-900 hover:text-indigo-600 transition"
             >
-              {fullName || "Unnamed Client"}
+              {company}
             </Link>
           );
         },
       },
-      {
-        accessorKey: "companyName",
-        header: "Company Name",
-        cell: ({ row }) => {
-          const company = row.original.companyName;
-          return company ? (
-            <span className="font-medium text-gray-800">{company}</span>
-          ) : (
-            <span className="text-gray-400">—</span>
-          );
-        },
-      },
+
       {
         accessorKey: "email",
         header: "Email",
@@ -160,7 +149,7 @@ export default function ClientIndexPage() {
           <DataTable
             columns={columns}
             data={clientList}
-            searchPlaceholder="Search clients by name, email, or company..."
+            searchPlaceholder="Search clients by company name, email, or number..."
             emptyMessage="No client accounts found. Click 'Add Client Account' to create one."
           />
         </div>
