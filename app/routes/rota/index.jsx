@@ -37,11 +37,17 @@ export async function loader({ request }) {
 
   // Rota events scoped to organization, and to the staff member if not admin/manager
   const rotaFilter = { deleted: false };
-  if (!isSuperAdmin && currentUser.organizationId) {
-    rotaFilter.organizationId = currentUser.organizationId;
-  }
   if (!canManageRota) {
-    rotaFilter.employee = currentUser.userId;
+    rotaFilter.$or = [
+      { employee: currentUser.userId },
+      { assignedTo: currentUser.userId },
+    ];
+  } else if (!isSuperAdmin && currentUser.organizationId) {
+    rotaFilter.$or = [
+      { organizationId: currentUser.organizationId },
+      { organizationId: null },
+      { organizationId: { $exists: false } },
+    ];
   }
 
   const [staffList, clientList, rotaEvents] = await Promise.all([
@@ -54,7 +60,7 @@ export async function loader({ request }) {
     Rota.find(rotaFilter)
       .populate("employee", "firstName lastName")
       .populate("assignedTo", "firstName lastName companyName landlordData")
-      .sort({ start: 1 })
+      .sort({ start: 1, date: 1 })
       .lean(),
   ]);
 
@@ -81,10 +87,9 @@ export async function loader({ request }) {
   const toLocalDateOnly = (d) => {
     if (!d) return null;
     const dt = new Date(d);
-    const yyyy = dt.getFullYear();
-    const mm   = String(dt.getMonth() + 1).padStart(2, "0");
-    const dd   = String(dt.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
+    if (isNaN(dt.getTime())) return null;
+    const normalized = new Date(dt.getTime() + 12 * 60 * 60 * 1000);
+    return normalized.toISOString().split("T")[0];
   };
 
   return {
@@ -94,10 +99,22 @@ export async function loader({ request }) {
     clientList: mappedClients,
     rotaEvents: rotaEvents.map((e) => {
       // Use the date field as the authoritative calendar date.
-      // Then append the HH:MM strings directly — no UTC conversion involved.
+      // Then append the HH:MM strings directly.
       const calDate = toLocalDateOnly(e.date || e.start);
-      const startStr = calDate && e.startTime ? `${calDate}T${e.startTime}:00` : calDate;
-      const endStr   = calDate && e.endTime   ? `${calDate}T${e.endTime}:00`   : calDate;
+      const startStr = calDate && e.startTime ? `${calDate}T${e.startTime}:00` : (calDate || "");
+      
+      let endStr = calDate;
+      if (calDate && e.endTime) {
+        if (e.startTime && e.endTime < e.startTime) {
+          // Overnight shift: ends on next calendar day
+          const [y, m, d] = calDate.split("-").map(Number);
+          const nextDay = new Date(Date.UTC(y, m - 1, d + 1));
+          const nextDateStr = nextDay.toISOString().split("T")[0];
+          endStr = `${nextDateStr}T${e.endTime}:00`;
+        } else {
+          endStr = `${calDate}T${e.endTime}:00`;
+        }
+      }
 
       const assignedToUser = e.assignedTo;
       const assignedToCompanyName = assignedToUser ? (assignedToUser.companyName || assignedToUser.landlordData?.companyName) : "";
@@ -105,27 +122,27 @@ export async function loader({ request }) {
       const assignedToDisplayName = assignedToCompanyName || assignedToPersonName || e.assignedToName || "";
 
       return {
-        id:    e._id.toString(),
-        title: `${e.startTime} – ${e.endTime}: ${e.employeeName || ""}`,
+        id: e._id.toString(),
+        title: `${e.startTime || ""} – ${e.endTime || ""}: ${e.employeeName || ""}`.trim(),
         start: startStr,
-        end:   endStr,
+        end: endStr,
         color: e.color || "#1e3a5f",
         extendedProps: {
-          description:    e.description    || "",
-          employeeId:     e.employee?._id?.toString() || "",
-          employeeName:   e.employeeName   || "",
-          assignedToId:   e.assignedTo?._id?.toString() || "",
+          description: e.description || "",
+          employeeId: e.employee?._id?.toString() || (e.employee ? e.employee.toString() : ""),
+          employeeName: e.employeeName || "",
+          assignedToId: e.assignedTo?._id?.toString() || (e.assignedTo ? e.assignedTo.toString() : ""),
           assignedToName: assignedToDisplayName,
-          startTime:      e.startTime,
-          endTime:        e.endTime,
-          repeat:         e.repeat,
-          repeatCount:    e.repeatCount,
-          sleep:          e.sleep ?? 0,
-          date:           toLocalDateOnly(e.date),
-          taskStatus:     e.taskStatus || "pending",
-          taskNotes:      e.taskNotes || "",
+          startTime: e.startTime,
+          endTime: e.endTime,
+          repeat: e.repeat,
+          repeatCount: e.repeatCount,
+          sleep: e.sleep ?? 0,
+          date: calDate,
+          taskStatus: e.taskStatus || "pending",
+          taskNotes: e.taskNotes || "",
           taskReasonIfNotDone: e.taskReasonIfNotDone || "",
-          taskUpdatedAt:  e.taskUpdatedAt ? e.taskUpdatedAt.toISOString() : null,
+          taskUpdatedAt: e.taskUpdatedAt ? e.taskUpdatedAt.toISOString() : null,
         },
       };
     }),
@@ -161,14 +178,14 @@ export async function action({ request }) {
   }
 
   // Shared field extraction (used by both create & update)
-  const dateRaw     = formData.get("date");
-  const startTime   = formData.get("startTime");
-  const endTime     = formData.get("endTime");
-  const repeat      = formData.get("repeat") || "none";
+  const dateRaw = formData.get("date");
+  const startTime = formData.get("startTime");
+  const endTime = formData.get("endTime");
+  const repeat = formData.get("repeat") || "none";
   const repeatCount = parseInt(formData.get("repeatCount") || "1", 10);
-  const sleep       = parseInt(formData.get("sleep") || "0", 10) || 0;
+  const sleep = parseInt(formData.get("sleep") || "0", 10) || 0;
   const description = formData.get("description") || "";
-  const employeeId  = formData.get("employeeId");
+  const employeeId = formData.get("employeeId");
   const assignedToId = formData.get("assignedToId");
 
   if (!dateRaw || !startTime || !endTime || !employeeId) {
@@ -183,9 +200,9 @@ export async function action({ request }) {
     User.findById(employeeId).select("firstName lastName").lean(),
     assignedToId ? User.findById(assignedToId).select("firstName lastName companyName landlordData").lean() : null,
   ]);
-  const employeeName   = employee ? `${employee.firstName || ""} ${employee.lastName || ""}`.trim() : "";
-  const clientCompany  = client ? (client.companyName || client.landlordData?.companyName) : "";
-  const clientPerson   = client ? `${client.firstName || ""} ${client.lastName || ""}`.trim() : "";
+  const employeeName = employee ? `${employee.firstName || ""} ${employee.lastName || ""}`.trim() : "";
+  const clientCompany = client ? (client.companyName || client.landlordData?.companyName) : "";
+  const clientPerson = client ? `${client.firstName || ""} ${client.lastName || ""}`.trim() : "";
   const assignedToName = clientCompany || clientPerson || "";
 
   // Parse YYYY-MM-DD as LOCAL midnight — new Date("YYYY-MM-DD") is UTC midnight
@@ -195,12 +212,12 @@ export async function action({ request }) {
   const buildStartEnd = (d) => {
     // Use local year/month/day to avoid UTC offset shifting the date
     const yyyy = d.getFullYear();
-    const mm   = String(d.getMonth() + 1).padStart(2, "0");
-    const dd   = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
     const dateStr = `${yyyy}-${mm}-${dd}`;
     return {
       start: new Date(`${dateStr}T${startTime}:00`),
-      end:   new Date(`${dateStr}T${endTime}:00`),
+      end: new Date(`${dateStr}T${endTime}:00`),
     };
   };
 
@@ -231,10 +248,10 @@ export async function action({ request }) {
       const additionalEvents = [];
       for (let i = 1; i < repeatCount; i++) {
         const d = new Date(baseDate);
-        if      (repeat === "daily")       d.setDate(d.getDate() + i);
-        else if (repeat === "weekly")      d.setDate(d.getDate() + i * 7);
+        if (repeat === "daily") d.setDate(d.getDate() + i);
+        else if (repeat === "weekly") d.setDate(d.getDate() + i * 7);
         else if (repeat === "fortnightly") d.setDate(d.getDate() + i * 14);
-        else if (repeat === "monthly")     d.setMonth(d.getMonth() + i);
+        else if (repeat === "monthly") d.setMonth(d.getMonth() + i);
 
         const { start: s, end: en } = buildStartEnd(d);
         additionalEvents.push({
@@ -261,7 +278,7 @@ export async function action({ request }) {
 
   for (let i = 0; i < iterations; i++) {
     const d = new Date(baseDate);
-    if (repeat === "daily")       d.setDate(d.getDate() + i);
+    if (repeat === "daily") d.setDate(d.getDate() + i);
     else if (repeat === "weekly") d.setDate(d.getDate() + i * 7);
     else if (repeat === "fortnightly") d.setDate(d.getDate() + i * 14);
     else if (repeat === "monthly") d.setMonth(d.getMonth() + i);

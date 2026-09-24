@@ -45,7 +45,7 @@ export async function loader({ request }) {
   }
 
   // ── ORGANIZATION DASHBOARD ───────────────────────────────────────────────────────
-  
+
   const [organization, dashboardData] = await Promise.all([
     Organization.findById(user.organizationId).lean(),
     getOrganizationDashboardData(user.organizationId)

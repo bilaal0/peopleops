@@ -25,8 +25,8 @@ export async function getOrganizationDashboardData(organizationId) {
     User.countDocuments({ organizationId, deleted: false, roles: { $in: staffRoles } }),
     User.countDocuments({ organizationId, deleted: false, roles: "CLIENT" }),
     Document.countDocuments({ organizationId, deleted: false }),
-    Rota.find({ 
-      organizationId, 
+    Rota.find({
+      organizationId,
       deleted: false,
       date: { $gte: todayStart, $lte: todayEnd }
     })

@@ -104,7 +104,13 @@ export default function UKDateInput({
   useEffect(() => {
     if (isControlled && fpRef.current && value !== undefined) {
       const currentFpDate = fpRef.current.selectedDates?.[0];
-      const currentIso = currentFpDate ? currentFpDate.toISOString().split("T")[0] : "";
+      let currentIso = "";
+      if (currentFpDate) {
+        const yyyy = currentFpDate.getFullYear();
+        const mm   = String(currentFpDate.getMonth() + 1).padStart(2, "0");
+        const dd   = String(currentFpDate.getDate()).padStart(2, "0");
+        currentIso = `${yyyy}-${mm}-${dd}`;
+      }
       if (value !== currentIso) {
         fpRef.current.setDate(value || null, false, "Y-m-d");
       }

@@ -13,6 +13,8 @@ import {
   fileToBuffer,
 } from "../../utils/s3.server.js";
 import { DocumentType } from "../../models/documentType.server.js";
+import { User } from "../../models/user.server.js";
+import { sendEmail, emailTemplates } from "../../utils/email.server.js";
 import { logDocumentUploaded } from "../../utils/activityLog.server.js";
 
 export async function action({ request }) {
@@ -107,6 +109,36 @@ export async function action({ request }) {
     },
     user
   );
+
+  // ── Send Email Notification if uploaded for an Employee/Staff member ────────
+  try {
+    const targetUser = await User.findOne({ _id: entityId, deleted: false }).lean();
+    if (targetUser && targetUser.email) {
+      const origin = new URL(request.url).origin;
+      const loginLink = `${origin}/login`;
+      const docTypeName = docTypeDoc?.name || title || rawDocType || "Document";
+      const recipientName = `${targetUser.firstName || ""} ${targetUser.lastName || ""}`.trim() || targetUser.email;
+      const formattedExpiry = finalExpiryDate ? new Date(finalExpiryDate).toLocaleDateString("en-GB") : null;
+
+      const template = emailTemplates.documentUploaded({
+        recipientName,
+        docTypeName,
+        fileName: file.name,
+        loginLink,
+        notes,
+        expiryDate: formattedExpiry,
+      });
+
+      await sendEmail({
+        to: targetUser.email,
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+      });
+    }
+  } catch (emailErr) {
+    console.error("[documents/upload] Failed to send email notification to employee:", emailErr.message);
+  }
 
   return data({
     success:    true,

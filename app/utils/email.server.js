@@ -210,10 +210,68 @@ function forgotPasswordTemplate({ email, resetLink }) {
   return { subject, html, text };
 }
 
+function documentUploadedTemplate({ recipientName, docTypeName, fileName, loginLink, notes, expiryDate }) {
+  const { companyName, supportEmail, siteUrl } = brand();
+  const subject = `Your "${docTypeName}" has been uploaded — ${companyName}`;
+  const targetLoginUrl = loginLink || `${siteUrl}/login`;
+
+  const html = `
+  <div style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f6f7fb; padding:24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+      <tr>
+        <td style="padding:20px 24px; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff;">
+          <h1 style="margin:0; font-size:18px; font-weight:700;">${companyName}</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:32px 24px;">
+          <h2 style="margin:0 0 16px; font-size:22px; color:#111827;">Document Uploaded</h2>
+          <p style="margin:0 0 16px; color:#374151; font-size:15px;">Hello ${recipientName || "there"},</p>
+          <p style="margin:0 0 20px; color:#374151; font-size:15px;">
+            Your <strong>"${docTypeName}"</strong> has been successfully uploaded to your profile on ${companyName}.
+          </p>
+          
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px 20px; margin:20px 0;">
+            <table width="100%" cellpadding="4" cellspacing="0" style="font-size:14px; color:#475569;">
+              <tr>
+                <td style="font-weight:600; width:130px; color:#1e293b;">Document Type:</td>
+                <td>${docTypeName}</td>
+              </tr>
+              ${fileName ? `<tr><td style="font-weight:600; color:#1e293b;">File Name:</td><td>${fileName}</td></tr>` : ""}
+              ${expiryDate ? `<tr><td style="font-weight:600; color:#1e293b;">Expiry Date:</td><td>${expiryDate}</td></tr>` : ""}
+              ${notes ? `<tr><td style="font-weight:600; color:#1e293b;">Notes:</td><td>${notes}</td></tr>` : ""}
+            </table>
+          </div>
+
+          <p style="margin:24px 0 16px; color:#374151; font-size:15px;">Please log in to your account to view and access your documents:</p>
+          
+          <div style="margin:24px 0;">
+            <a href="${targetLoginUrl}" style="display:inline-block; background:#4f46e5; color:#ffffff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px; box-shadow:0 2px 4px rgba(79,70,229,0.3);">
+              Log In to View Documents
+            </a>
+          </div>
+
+          <p style="margin:16px 0 0; color:#64748b; font-size:13px; word-break:break-all;">
+            Login link: <a href="${targetLoginUrl}" style="color:#4f46e5; text-decoration:underline;">${targetLoginUrl}</a>
+          </p>
+
+          <hr style="border:none; border-top:1px solid #e5e7eb; margin:28px 0 20px;">
+          <p style="margin:0; color:#9ca3af; font-size:12px;">Need help or have questions? Contact us at ${supportEmail}</p>
+        </td>
+      </tr>
+    </table>
+  </div>`;
+
+  const text = `Hello ${recipientName || "there"},\n\nYour "${docTypeName}" has been uploaded to your profile on ${companyName}.\n\nDocument Type: ${docTypeName}\n${fileName ? `File Name: ${fileName}\n` : ""}${expiryDate ? `Expiry Date: ${expiryDate}\n` : ""}${notes ? `Notes: ${notes}\n` : ""}\nPlease log in to your account to view your documents:\n${targetLoginUrl}\n\nNeed help? Contact ${supportEmail}`;
+
+  return { subject, html, text };
+}
+
 // Export templates
 export const emailTemplates = {
   otpVerification: otpVerificationTemplate,
   emailAlreadyExists: emailAlreadyExistsTemplate,
   organizationInvite: organizationInviteTemplate,
   forgotPassword: forgotPasswordTemplate,
+  documentUploaded: documentUploadedTemplate,
 };
