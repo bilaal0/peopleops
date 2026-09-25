@@ -27,11 +27,11 @@ function getTransporter() {
 }
 
 // Generic sender you can use with any template
-export async function sendEmail({ to, subject, html, text, from }) {
+export async function sendEmail({ to, subject, html, text, from, replyTo }) {
   try {
     const t = getTransporter();
     const fromAddr = from || process.env.SMTP_FROM || `PeopleOps <${process.env.SMTP_USER}>`;
-    return await t.sendMail({ from: fromAddr, to, subject, html, text });
+    return await t.sendMail({ from: fromAddr, to, subject, html, text, ...(replyTo ? { replyTo } : {}) });
   } catch (error) {
     console.error("Failed to send email via SMTP:", error.message);
 
@@ -39,7 +39,9 @@ export async function sendEmail({ to, subject, html, text, from }) {
     if (process.env.NODE_ENV === "development") {
       console.log("\n[DEV] Email sending failed — logging to console instead:\n");
       console.log("==================================================");
+      console.log(`From: ${from || "default"}`);
       console.log(`To: ${to}`);
+      if (replyTo) console.log(`Reply-To: ${replyTo}`);
       console.log(`Subject: ${subject}`);
       console.log("--------------------------------------------------");
       console.log(text || "No plain text version");
@@ -210,9 +212,11 @@ function forgotPasswordTemplate({ email, resetLink }) {
   return { subject, html, text };
 }
 
-function documentUploadedTemplate({ recipientName, docTypeName, fileName, loginLink, notes, expiryDate }) {
-  const { companyName, supportEmail, siteUrl } = brand();
-  const subject = `Your "${docTypeName}" has been uploaded — ${companyName}`;
+function documentUploadedTemplate({ recipientName, docTypeName, fileName, loginLink, notes, expiryDate, organizationName, contactEmail }) {
+  const { companyName: defaultCompanyName, supportEmail: defaultSupportEmail, siteUrl } = brand();
+  const orgDisplayName = organizationName || defaultCompanyName;
+  const helpContact = contactEmail || (organizationName ? `${organizationName} Support` : defaultSupportEmail);
+  const subject = `Your "${docTypeName}" has been uploaded — ${orgDisplayName}`;
   const targetLoginUrl = loginLink || `${siteUrl}/login`;
 
   const html = `
@@ -220,7 +224,7 @@ function documentUploadedTemplate({ recipientName, docTypeName, fileName, loginL
     <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
       <tr>
         <td style="padding:20px 24px; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff;">
-          <h1 style="margin:0; font-size:18px; font-weight:700;">${companyName}</h1>
+          <h1 style="margin:0; font-size:18px; font-weight:700;">${orgDisplayName}</h1>
         </td>
       </tr>
       <tr>
@@ -228,7 +232,7 @@ function documentUploadedTemplate({ recipientName, docTypeName, fileName, loginL
           <h2 style="margin:0 0 16px; font-size:22px; color:#111827;">Document Uploaded</h2>
           <p style="margin:0 0 16px; color:#374151; font-size:15px;">Hello ${recipientName || "there"},</p>
           <p style="margin:0 0 20px; color:#374151; font-size:15px;">
-            Your <strong>"${docTypeName}"</strong> has been successfully uploaded to your profile on ${companyName}.
+            Your <strong>"${docTypeName}"</strong> has been successfully uploaded to your profile on ${orgDisplayName}.
           </p>
           
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px 20px; margin:20px 0;">
@@ -256,13 +260,13 @@ function documentUploadedTemplate({ recipientName, docTypeName, fileName, loginL
           </p>
 
           <hr style="border:none; border-top:1px solid #e5e7eb; margin:28px 0 20px;">
-          <p style="margin:0; color:#9ca3af; font-size:12px;">Need help or have questions? Contact us at ${supportEmail}</p>
+          <p style="margin:0; color:#9ca3af; font-size:12px;">Need help or have questions? Contact ${helpContact}</p>
         </td>
       </tr>
     </table>
   </div>`;
 
-  const text = `Hello ${recipientName || "there"},\n\nYour "${docTypeName}" has been uploaded to your profile on ${companyName}.\n\nDocument Type: ${docTypeName}\n${fileName ? `File Name: ${fileName}\n` : ""}${expiryDate ? `Expiry Date: ${expiryDate}\n` : ""}${notes ? `Notes: ${notes}\n` : ""}\nPlease log in to your account to view your documents:\n${targetLoginUrl}\n\nNeed help? Contact ${supportEmail}`;
+  const text = `Hello ${recipientName || "there"},\n\nYour "${docTypeName}" has been uploaded to your profile on ${orgDisplayName}.\n\nDocument Type: ${docTypeName}\n${fileName ? `File Name: ${fileName}\n` : ""}${expiryDate ? `Expiry Date: ${expiryDate}\n` : ""}${notes ? `Notes: ${notes}\n` : ""}\nPlease log in to your account to view your documents:\n${targetLoginUrl}\n\nNeed help? Contact ${helpContact}`;
 
   return { subject, html, text };
 }

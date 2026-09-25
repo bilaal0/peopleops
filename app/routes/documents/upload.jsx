@@ -14,6 +14,7 @@ import {
 } from "../../utils/s3.server.js";
 import { DocumentType } from "../../models/documentType.server.js";
 import { User } from "../../models/user.server.js";
+import { Organization } from "../../models/organization.server.js";
 import { sendEmail, emailTemplates } from "../../utils/email.server.js";
 import { logDocumentUploaded } from "../../utils/activityLog.server.js";
 
@@ -110,10 +111,42 @@ export async function action({ request }) {
     user
   );
 
-  // ── Send Email Notification if uploaded for an Employee/Staff member ────────
+  // ── Send Email Notification if uploaded for an Employee/Staff/Client member ────────
   try {
-    const targetUser = await User.findOne({ _id: entityId, deleted: false }).lean();
+    const isEntityUser = entityId && entityId !== "general" && /^[0-9a-fA-F]{24}$/.test(entityId);
+    const targetUser = isEntityUser
+      ? await User.findOne({ _id: entityId, deleted: false }).populate("organizationId", "name primaryAdmin").lean()
+      : null;
+
     if (targetUser && targetUser.email) {
+      let organizationName = targetUser.organizationId?.name || null;
+      let contactEmail = null;
+
+      if (!organizationName && (resolvedOrganizationId || user.organizationId)) {
+        const orgIdToLookup = resolvedOrganizationId || user.organizationId;
+        const orgDoc = await Organization.findById(orgIdToLookup).select("name primaryAdmin").populate("primaryAdmin", "email").lean();
+        organizationName = orgDoc?.name || null;
+        contactEmail = orgDoc?.primaryAdmin?.email || null;
+      }
+
+      if (!contactEmail && targetUser.organizationId?.primaryAdmin) {
+        if (typeof targetUser.organizationId.primaryAdmin === "object" && targetUser.organizationId.primaryAdmin.email) {
+          contactEmail = targetUser.organizationId.primaryAdmin.email;
+        } else {
+          const adminUser = await User.findById(targetUser.organizationId.primaryAdmin).select("email").lean();
+          contactEmail = adminUser?.email || null;
+        }
+      }
+
+      if (!organizationName && targetUser.companyName) {
+        organizationName = targetUser.companyName;
+      }
+
+      // Fallback contact email to the admin/manager who uploaded the document
+      if (!contactEmail && user?.email) {
+        contactEmail = user.email;
+      }
+
       const origin = new URL(request.url).origin;
       const loginLink = `${origin}/login`;
       const docTypeName = docTypeDoc?.name || title || rawDocType || "Document";
@@ -127,13 +160,22 @@ export async function action({ request }) {
         loginLink,
         notes,
         expiryDate: formattedExpiry,
+        organizationName,
+        contactEmail,
       });
+
+      const smtpSender = process.env.SMTP_USER || (process.env.SMTP_FROM ? process.env.SMTP_FROM.replace(/.*<([^>]+)>.*/, "$1") : "noreply@peopleops.co.uk");
+      const fromHeader = organizationName
+        ? `"${organizationName}" <${smtpSender}>`
+        : undefined;
 
       await sendEmail({
         to: targetUser.email,
         subject: template.subject,
         html: template.html,
         text: template.text,
+        from: fromHeader,
+        replyTo: contactEmail || undefined,
       });
     }
   } catch (emailErr) {
