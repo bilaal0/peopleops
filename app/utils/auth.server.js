@@ -13,8 +13,10 @@ import { connect } from "../config/db.server.js";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const SESSION_SECRET = process.env.SESSION_SECRET || (process.env.NODE_ENV !== "production" ? "proplet-default-dev-session-secret-key-12345" : undefined);
-if (!SESSION_SECRET) throw new Error("SESSION_SECRET is missing. Please define SESSION_SECRET in your .env file.");
+const SESSION_SECRET = process.env.SESSION_SECRET || "proplet-production-session-fallback-secret-key-987654321";
+if (!process.env.SESSION_SECRET) {
+  console.warn("[AUTH WARNING]: SESSION_SECRET is not set in environment variables. Using fallback secret. Please add SESSION_SECRET in Vercel Project Settings.");
+}
 
 // Cookie session storage (id-only)
 export const sessionStorage = createCookieSessionStorage({

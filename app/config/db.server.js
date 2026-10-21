@@ -18,17 +18,23 @@ async function connect() {
   }
 
   if (!cached.promise) {
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      const err = new Error("MONGODB_URI is not defined in environment variables. Please configure it in your Vercel Project Settings.");
+      console.error(err.message);
+      throw err;
+    }
+
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
-      maxPoolSize: 25,
-      minPoolSize: 5,
+      maxPoolSize: 10,
       maxIdleTimeMS: 60000,
     };
 
-    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongooseInstance) => {
+    cached.promise = mongoose.connect(mongoUri, opts).then((mongooseInstance) => {
       return mongooseInstance;
     });
   }
@@ -37,6 +43,7 @@ async function connect() {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
+    console.error("Failed to connect to MongoDB:", e.message || e);
     throw e;
   }
 
