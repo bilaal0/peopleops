@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -138,11 +137,14 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-=======
+
 .DS_Store
 /node_modules/
 
 # React Router
 /.react-router/
 /build/
->>>>>>> ba7a867 (Initial commit from create-react-router)
+
+# Vercel
+.vercel
+.vercel/
