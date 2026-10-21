@@ -23,11 +23,16 @@ export async function action({ request }) {
 
   await connect();
   
-  // Verify document exists and belongs to this organization
-  const doc = await Document.findOne({ 
-    _id: documentId, 
-    organizationId: user.organizationId 
-  });
+  // Verify document exists and belongs to this organization (or has null organizationId)
+  const query = { _id: documentId, deleted: false };
+  if (!user.roles?.includes("SUPER_ADMIN") && user.organizationId) {
+    query.$or = [
+      { organizationId: user.organizationId },
+      { organizationId: null },
+      { organizationId: { $exists: false } },
+    ];
+  }
+  const doc = await Document.findOne(query);
   
   if (!doc) {
     return data({ error: "Document not found" }, { status: 404 });

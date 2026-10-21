@@ -23,7 +23,8 @@ const attendanceSchema = new Schema(
   { timestamps: true }
 );
 
-attendanceSchema.index({ user: 1, date: 1 });
-attendanceSchema.index({ organizationId: 1, date: 1 });
+attendanceSchema.index({ organizationId: 1, date: -1 });
+attendanceSchema.index({ organizationId: 1, user: 1, date: -1 });
+attendanceSchema.index({ user: 1, date: -1 });
 
 export const Attendance = mongoose.models.Attendance || mongoose.model("Attendance", attendanceSchema);

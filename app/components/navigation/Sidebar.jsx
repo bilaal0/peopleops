@@ -12,6 +12,8 @@ import {
   CalendarDays,
   FileText,
   ClipboardList,
+  BarChart3,
+  MessageSquare,
 } from "lucide-react";
 import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";
 
@@ -40,6 +42,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
         { name: "Attendance & Tasks", href: "/attendance", icon: ClipboardList },
         { name: "My Rota", href: "/rota", icon: CalendarDays },
+        { name: "Messages", href: "/messages", icon: MessageSquare },
         { name: "My Documents", href: "/documents", icon: FileText },
       ]
     : [
@@ -53,7 +56,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             { name: "Clients", href: "/user-accounts/client", icon: Users },
           ],
         },
+        { name: "Staff Reports", href: "/reports/staff", icon: BarChart3 },
         { name: "Rota System", href: "/rota", icon: CalendarDays },
+        { name: "Messages", href: "/messages", icon: MessageSquare },
         { name: "Documents", href: "/documents", icon: FileText },
       ];
 

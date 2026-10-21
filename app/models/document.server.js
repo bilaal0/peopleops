@@ -117,6 +117,8 @@ const documentSchema = new Schema(
 );
 
 // ── INDEXES ───────────────────────────────────────────────────────────────────
+documentSchema.index({ entityId: 1, deleted: 1 });
+documentSchema.index({ organizationId: 1, deleted: 1 });
 documentSchema.index({ organizationId: 1, entityType: 1, entityId: 1 });
 documentSchema.index({ organizationId: 1, docType: 1 });
 documentSchema.index({ expiryDate: 1 }); // for expiry alert cron jobs

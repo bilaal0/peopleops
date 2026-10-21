@@ -160,6 +160,12 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+// Add indexes for high-frequency queries
+userSchema.index({ organizationId: 1, roles: 1, deleted: 1 });
+userSchema.index({ organizationId: 1, deleted: 1 });
+userSchema.index({ roles: 1, deleted: 1 });
+userSchema.index({ email: 1, deleted: 1 });
+
 // Add indexes for landlordData
 userSchema.index({ organizationId: 1, 'landlordData.amlResult': 1 });
 

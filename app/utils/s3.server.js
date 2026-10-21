@@ -30,7 +30,23 @@ export const ALLOWED_MIME_TYPES = {
   "application/pdf": ".pdf",
   "image/jpeg":      ".jpg",
   "image/png":       ".png",
+  "audio/mpeg":      ".mp3",
+  "audio/mp3":       ".mp3",
+  "audio/wav":       ".wav",
+  "audio/wave":      ".wav",
+  "audio/x-wav":     ".wav",
+  "audio/x-pn-wav":  ".wav",
 };
+
+export const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".mp3",
+  ".wav",
+  ".wave",
+];
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -71,13 +87,36 @@ export async function fileToBuffer(file) {
 
 // ── Presigned download URL ────────────────────────────────────────────────────
 /**
- * Generate a time-limited presigned URL for downloading a file.
+ * Generate a time-limited presigned URL for downloading or viewing a file.
  * Default: 1 hour expiry. Never share the raw S3 key with the browser.
  * @param {string} s3Key
  * @param {number} expiresIn  Seconds until URL expires (default 3600 = 1hr)
+ * @param {object} [options]
+ * @param {boolean} [options.download]  Force download (Content-Disposition: attachment)
+ * @param {boolean} [options.inline]    Force inline display (Content-Disposition: inline)
+ * @param {string}  [options.fileName]  Suggested file name
+ * @param {string}  [options.contentType] Override Content-Type
  */
-export async function getPresignedUrl(s3Key, expiresIn = 3600) {
-  const command = new GetObjectCommand({ Bucket: BUCKET, Key: s3Key });
+export async function getPresignedUrl(s3Key, expiresIn = 3600, options = {}) {
+  const getObjectParams = { Bucket: BUCKET, Key: s3Key };
+
+  if (options.download) {
+    const filename = options.fileName
+      ? `attachment; filename="${options.fileName.replace(/["\r\n]/g, "")}"`
+      : "attachment";
+    getObjectParams.ResponseContentDisposition = filename;
+  } else if (options.inline) {
+    const filename = options.fileName
+      ? `inline; filename="${options.fileName.replace(/["\r\n]/g, "")}"`
+      : "inline";
+    getObjectParams.ResponseContentDisposition = filename;
+  }
+
+  if (options.contentType) {
+    getObjectParams.ResponseContentType = options.contentType;
+  }
+
+  const command = new GetObjectCommand(getObjectParams);
   return getSignedUrl(s3, command, { expiresIn });
 }
 
@@ -116,8 +155,12 @@ export function validateFile(file) {
   if (file.size > MAX_FILE_SIZE) {
     return { valid: false, error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.` };
   }
-  if (!ALLOWED_MIME_TYPES[file.type]) {
-    return { valid: false, error: `File type not allowed. Accepted: PDF, JPG, PNG.` };
+  const ext = path.extname(file.name || "").toLowerCase();
+  const isMimeAllowed = Boolean(ALLOWED_MIME_TYPES[file.type]);
+  const isExtAllowed  = ALLOWED_EXTENSIONS.includes(ext);
+
+  if (!isMimeAllowed && !isExtAllowed) {
+    return { valid: false, error: `File type not allowed. Accepted: PDF, JPG, PNG, MP3, WAV.` };
   }
   return { valid: true };
 }

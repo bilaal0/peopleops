@@ -58,6 +58,16 @@ export async function action({ request }) {
   }
 
   // ── Upload to S3 ──────────────────────────────────────────────────────────
+  const ext = (file.name ? file.name.substring(file.name.lastIndexOf(".")).toLowerCase() : "");
+  let resolvedMimeType = file.type;
+  if (!resolvedMimeType || resolvedMimeType === "application/octet-stream") {
+    if (ext === ".mp3") resolvedMimeType = "audio/mpeg";
+    else if (ext === ".wav" || ext === ".wave") resolvedMimeType = "audio/wav";
+    else if (ext === ".pdf") resolvedMimeType = "application/pdf";
+    else if (ext === ".png") resolvedMimeType = "image/png";
+    else if (ext === ".jpg" || ext === ".jpeg") resolvedMimeType = "image/jpeg";
+  }
+
   let s3Key;
   try {
     const fileBuffer     = await fileToBuffer(file);
@@ -68,7 +78,7 @@ export async function action({ request }) {
       docType || "none",
       file.name
     );
-    s3Key = await uploadToS3(fileBuffer, destinationKey, file.type);
+    s3Key = await uploadToS3(fileBuffer, destinationKey, resolvedMimeType || "application/octet-stream");
   } catch (err) {
     console.error("S3 upload failed:", err);
     return data({ error: "File upload failed. Please try again." }, { status: 500 });
@@ -96,7 +106,7 @@ export async function action({ request }) {
     fileName:   file.name,
     s3Key,
     fileSize:   file.size,
-    mimeType:   file.type,
+    mimeType:   resolvedMimeType || file.type || "application/octet-stream",
     uploadedBy: user.userId,
     issueDate:  issueDate || null,
     expiryDate: finalExpiryDate,

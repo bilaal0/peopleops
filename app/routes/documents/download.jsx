@@ -30,8 +30,31 @@ export async function loader({ request, params }) {
     return new Response("Document not found", { status: 404 });
   }
 
-  // Generate 15-min presigned URL and redirect the browser to it
-  const url = await getPresignedUrl(doc.s3Key, EXPIRY_SECONDS);
+  const urlObj = new URL(request.url);
+  const wantsJson =
+    urlObj.searchParams.get("format") === "json" ||
+    urlObj.searchParams.get("json") === "1" ||
+    request.headers.get("Accept")?.includes("application/json");
+
+  const isInline = urlObj.searchParams.get("inline") === "1" || urlObj.searchParams.get("view") === "1";
+
+  // Generate 15-min presigned URL with attachment disposition by default (unless inline requested)
+  const url = await getPresignedUrl(doc.s3Key, EXPIRY_SECONDS, {
+    download: !isInline,
+    inline: isInline,
+    fileName: doc.fileName,
+    contentType: doc.mimeType,
+  });
+
+  if (wantsJson) {
+    return {
+      success: true,
+      url,
+      fileName: doc.fileName,
+      mimeType: doc.mimeType || "application/octet-stream",
+    };
+  }
+
   return redirect(url);
 }
 

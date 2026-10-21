@@ -30,9 +30,16 @@ export async function loader({ request }) {
     }
   }
 
+  const isDownload = url.searchParams.get("download") === "1";
+  const fileName   = url.searchParams.get("fileName") || s3Key.split("/").pop();
+
   // Generate a presigned URL and redirect the browser to it
   try {
-    const presignedUrl = await getPresignedUrl(s3Key, EXPIRY_SECONDS);
+    const presignedUrl = await getPresignedUrl(s3Key, EXPIRY_SECONDS, {
+      download: isDownload,
+      inline: !isDownload,
+      fileName,
+    });
     return redirect(presignedUrl);
   } catch (error) {
     console.error("Error generating presigned URL for direct S3 key:", error);

@@ -9,7 +9,11 @@ if (!cached) {
 }
 
 async function connect() {
-  if (cached.conn) {
+  if (mongoose.connection?.readyState === 1) {
+    return mongoose;
+  }
+
+  if (cached.conn && cached.conn.connection?.readyState === 1) {
     return cached.conn;
   }
 
@@ -18,10 +22,14 @@ async function connect() {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      maxPoolSize: 25,
+      minPoolSize: 5,
+      maxIdleTimeMS: 60000,
     };
 
-    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
+    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongooseInstance) => {
+      return mongooseInstance;
     });
   }
 

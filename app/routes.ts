@@ -19,6 +19,7 @@ export default [
   route("auth/accept-invite", "routes/auth/auth.invite.jsx"),
 
   // ── Raw response routes (no layout shell) ──────────────────────────────────
+  route("documents/:id/view", "routes/documents/view.jsx"),
   route("documents/:id/download", "routes/documents/download.jsx"),
   route("documents/s3-download", "routes/documents/s3-download.jsx"),
   route("documents/verify", "routes/documents/verify.jsx"),
@@ -33,6 +34,7 @@ export default [
   route("api/notifications", "routes/api/notifications.jsx"),
   route("api/attendance", "routes/api/attendance.jsx"),
   route("api/rota-task", "routes/api/rota-task.jsx"),
+  route("api/messages", "routes/api/messages.jsx"),
 
 
   layout("components/navigation/Layout.jsx", [
@@ -95,5 +97,10 @@ export default [
 
     // ── Staff Attendance & Tasks ──────────────────────────────────
     route("attendance", "routes/attendance/index.jsx"),
+
+    // ── Reports (Clients & Staff) ─────────────────────────────────
+    route("reports/clients", "routes/reports/clients.jsx"),
+    route("reports/staff", "routes/reports/staff.jsx"),
+    route("messages", "routes/messages.jsx"),
   ]),
 ] satisfies RouteConfig;

@@ -24,22 +24,42 @@ export async function loader({ request }) {
   const clientUsers = await User.find(query).sort({ createdAt: -1 }).lean();
 
   return {
-    clientList: clientUsers.map((u) => ({
-      _id: u._id.toString(),
-      title: u.title || "",
-      firstName: u.firstName || "",
-      lastName: u.lastName || "",
-      email: u.email || "",
-      phone: u.phone || u.telephoneNo || "",
-      positionInCompany: u.positionInCompany || "",
-      isCompany: Boolean(u.companyName || u.landlordData?.isCompany || u.landlordData?.companyName),
-      companyName: u.companyName || u.landlordData?.companyName || "",
-      companyNumber: u.landlordData?.companyNumber || "",
-      services: u.services || [],
-      status: u.status ?? 1,
-      joiningDate: u.joiningDate ? new Date(u.joiningDate).toLocaleDateString("en-GB") : "—",
-      createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB") : "—",
-    })),
+    clientList: clientUsers.map((u) => {
+      const fullName = `${u.title ? u.title + " " : ""}${u.firstName || ""} ${u.lastName || ""}`.trim();
+      const addressParts = [
+        u.addressLine1,
+        u.addressLine2,
+        u.addressLine3,
+        u.postTown || u.city,
+        u.postcode,
+      ].filter(Boolean);
+      const address = addressParts.join(", ") || "";
+
+      return {
+        _id: u._id.toString(),
+        name: fullName || u.companyName || "Unnamed Client",
+        fullName: fullName || "Unnamed Client",
+        title: u.title || "",
+        firstName: u.firstName || "",
+        lastName: u.lastName || "",
+        email: u.email || "",
+        phone: u.phone || u.telephoneNo || "",
+        address,
+        addressLine1: u.addressLine1 || "",
+        addressLine2: u.addressLine2 || "",
+        addressLine3: u.addressLine3 || "",
+        city: u.postTown || u.city || "",
+        postcode: u.postcode || "",
+        positionInCompany: u.positionInCompany || "",
+        isCompany: Boolean(u.companyName || u.landlordData?.isCompany || u.landlordData?.companyName),
+        companyName: u.companyName || u.landlordData?.companyName || "",
+        companyNumber: u.landlordData?.companyNumber || "",
+        services: u.services || [],
+        status: u.status ?? 1,
+        joiningDate: u.joiningDate ? new Date(u.joiningDate).toLocaleDateString("en-GB") : "—",
+        createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB") : "—",
+      };
+    }),
   };
 }
 
@@ -49,52 +69,61 @@ export default function ClientIndexPage() {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "companyName",
-        header: "Company Name",
+        accessorKey: "name",
+        header: "Name",
         cell: ({ row }) => {
           const c = row.original;
-          const company = c.companyName || "Unnamed Company";
+          const active = c.status === 1;
           return (
-            <Link
-              to={`/user-accounts/client/${c._id}`}
-              className="font-semibold text-gray-900 hover:text-indigo-600 transition"
-            >
-              {company}
-            </Link>
+            <div>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/user-accounts/client/${c._id}`}
+                  className="font-semibold text-gray-900 hover:text-indigo-600 transition"
+                >
+                  {c.name}
+                </Link>
+                {!active && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700">
+                    Inactive
+                  </span>
+                )}
+              </div>
+              {c.companyName && c.companyName !== c.name && (
+                <p className="text-xs text-gray-500 font-normal truncate max-w-xs mt-0.5">
+                  {c.companyName}
+                </p>
+              )}
+            </div>
           );
         },
       },
-
       {
         accessorKey: "email",
         header: "Email",
-        cell: ({ row }) => row.original.email || <span className="text-gray-400">—</span>,
-      },
-      {
-        accessorKey: "phone",
-        header: "Number",
-        cell: ({ row }) => row.original.phone || <span className="text-gray-400">—</span>,
-      },
-      {
-        accessorKey: "joiningDate",
-        header: "Joining Date",
-        cell: ({ row }) => row.original.joiningDate || <span className="text-gray-400">—</span>,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const active = row.original.status === 1;
-          return (
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                active ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
-              }`}
+        cell: ({ row }) =>
+          row.original.email ? (
+            <a
+              href={`mailto:${row.original.email}`}
+              className="text-gray-700 hover:text-indigo-600 transition"
             >
-              {active ? "Active" : "Inactive"}
+              {row.original.email}
+            </a>
+          ) : (
+            <span className="text-gray-400">—</span>
+          ),
+      },
+      {
+        accessorKey: "address",
+        header: "Address",
+        cell: ({ row }) =>
+          row.original.address ? (
+            <span className="text-gray-700 text-sm max-w-md block" title={row.original.address}>
+              {row.original.address}
             </span>
-          );
-        },
+          ) : (
+            <span className="text-gray-400 italic">No address</span>
+          ),
       },
       {
         id: "actions",
@@ -102,15 +131,17 @@ export default function ClientIndexPage() {
         cell: ({ row }) => {
           const c = row.original;
           return (
-            <Link
-              to={`/user-accounts/client/${c._id}`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:from-slate-900 hover:to-slate-800 transition-all"
-            >
-              View
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
+            <div className="flex justify-end">
+              <Link
+                to={`/user-accounts/client/${c._id}`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:from-slate-900 hover:to-slate-800 transition-all"
+              >
+                View
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            </div>
           );
         },
       },
@@ -149,7 +180,7 @@ export default function ClientIndexPage() {
           <DataTable
             columns={columns}
             data={clientList}
-            searchPlaceholder="Search clients by company name, email, or number..."
+            searchPlaceholder="Search clients by name, email, or address..."
             emptyMessage="No client accounts found. Click 'Add Client Account' to create one."
           />
         </div>

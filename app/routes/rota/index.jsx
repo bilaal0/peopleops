@@ -58,6 +58,7 @@ export async function loader({ request }) {
       ? User.find(clientQuery).select("firstName lastName positionInCompany companyName landlordData").sort({ companyName: 1, firstName: 1 }).lean()
       : [],
     Rota.find(rotaFilter)
+      .select("employee employeeName assignedTo assignedToName startTime endTime date start end color description repeat repeatCount sleep taskStatus taskNotes taskReasonIfNotDone taskUpdatedAt")
       .populate("employee", "firstName lastName")
       .populate("assignedTo", "firstName lastName companyName landlordData")
       .sort({ start: 1, date: 1 })

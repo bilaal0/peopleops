@@ -58,8 +58,10 @@ const rotaSchema = new Schema(
 );
 
 // Index for efficient queries
+rotaSchema.index({ organizationId: 1, deleted: 1, date: -1 });
+rotaSchema.index({ organizationId: 1, deleted: 1, start: 1, date: 1 });
+rotaSchema.index({ employee: 1, deleted: 1, date: -1 });
+rotaSchema.index({ assignedTo: 1, deleted: 1, date: -1 });
 rotaSchema.index({ date: 1, organizationId: 1 });
-rotaSchema.index({ employee: 1 });
-rotaSchema.index({ assignedTo: 1 });
 
 export const Rota = mongoose.models.Rota || mongoose.model("Rota", rotaSchema);

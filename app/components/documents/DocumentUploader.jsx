@@ -6,8 +6,7 @@ import { useFetcher } from "react-router-dom";
 import { fmtDate } from "../../utils/date.js";
 import UKDateInput from "../ui/UKDateInput.jsx";
 
-// Lazy import keeps react-pdf out of the SSR bundle (DOMMatrix is browser-only)
-const DocumentViewer = lazy(() => import("./DocumentViewer.jsx"));
+import DocumentViewer from "./DocumentViewer.jsx";
 
 // ── Expiry badge ──────────────────────────────────────────────────────────────
 function ExpiryBadge({ expiryDate }) {
@@ -275,11 +274,11 @@ export default function DocumentUploader({ entityType, entityId, docTypes, docs 
           ref={fileRef}
           type="file"
           name="file"
-          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp3,.wav,.wave,audio/mpeg,audio/wav,audio/*"
           required
           className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-medium file:text-sm hover:file:bg-indigo-100 cursor-pointer"
         />
-        <p className="text-xs text-gray-400 mt-1">Accepted: PDF, JPG, PNG, DOC, DOCX · Max 10 MB</p>
+        <p className="text-xs text-gray-400 mt-1">Accepted: PDF, JPG, PNG, MP3, WAV, DOC, DOCX · Max 10 MB</p>
       </div>
 
       {/* Notes */}
@@ -394,9 +393,11 @@ export default function DocumentUploader({ entityType, entityId, docTypes, docs 
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-gray-800 truncate" title={doc.fileName}>{doc.fileName}</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
-                            Uploaded {fmtDate(doc.createdAt)} {doc.fileSize && `· ${formatSize(doc.fileSize)}`}
-                          </p>
+                          {doc.fileSize && (
+                            <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
+                              {formatSize(doc.fileSize)}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -433,9 +434,9 @@ export default function DocumentUploader({ entityType, entityId, docTypes, docs 
                             isAdmin={isAdmin}
                           />
                         </Suspense>
-                        {doc.s3Key && (
+                        {(doc._id || doc.s3Key) && (
                           <a
-                            href={`/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}&download=1`}
+                            href={doc._id ? `/documents/${doc._id}/download` : `/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}&download=1`}
                             className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition"
                             title="Download document"
                           >
@@ -543,7 +544,6 @@ export default function DocumentUploader({ entityType, entityId, docTypes, docs 
                         </div>
                         <div className="min-w-0 max-w-[200px] sm:max-w-[300px]">
                           <p className="text-sm font-semibold text-gray-900 truncate" title={doc.fileName}>{doc.fileName}</p>
-                          <p className="text-xs text-gray-400 mt-0.5" suppressHydrationWarning>{fmtDate(doc.createdAt)}</p>
                         </div>
                       </div>
                     </td>
@@ -576,10 +576,11 @@ export default function DocumentUploader({ entityType, entityId, docTypes, docs 
                             isAdmin={isAdmin}
                           />
                         </Suspense>
-                        {doc.s3Key && (
+                        {(doc._id || doc.s3Key) && (
                           <a
-                            href={`/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}&download=1`}
+                            href={doc._id ? `/documents/${doc._id}/download` : `/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}&download=1`}
                             className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition"
+                            title="Download document"
                           >
                             Download
                           </a>

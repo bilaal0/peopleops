@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useFetcher, useRevalidator } from "react-router";
 import {
   UserCheck,
@@ -17,6 +17,10 @@ import {
   CalendarDays,
   ShieldCheck,
   ClipboardList,
+  MessageSquare,
+  SendHorizontal,
+  Mail,
+  CheckCheck,
 } from "lucide-react";
 
 function formatTime12(dateObjOrString) {
@@ -60,6 +64,7 @@ export default function StaffDashboard({
   todayAttendance,
   attendanceHistory = [],
   previousTasks = [],
+  messages = [],
 }) {
   const { todayRota } = dashboardData || { todayRota: [] };
   const { revalidate } = useRevalidator();
@@ -67,13 +72,60 @@ export default function StaffDashboard({
   // Fetchers for background actions
   const attendanceFetcher = useFetcher();
   const taskFetcher = useFetcher();
+  const messageFetcher = useFetcher();
 
   // Active attendance state
   const currentAttendance = attendanceFetcher.data?.record || todayAttendance;
   const isMarkedToday = Boolean(currentAttendance);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("today_tasks"); // "today_tasks" | "previous_tasks" | "attendance_history"
+  const [activeTab, setActiveTab] = useState("today_tasks"); // "today_tasks" | "previous_tasks" | "attendance_history" | "messages"
+  const [replyText, setReplyText] = useState("");
+  const staffMessagesEndRef = useRef(null);
+
+  // Management recipient lookup from past thread
+  const lastAdminMessage = [...messages].reverse().find(m => !m.isFromMe);
+  const managementRecipientId = lastAdminMessage ? lastAdminMessage.sender : (organization?.primaryAdmin || "");
+  const unreadMessagesCount = messages.filter(m => !m.isFromMe && !m.read).length;
+
+  const isSendingMessage = messageFetcher.state !== "idle" && messageFetcher.formData?.get("_intent") === "send_message";
+  const optimisticText = isSendingMessage ? messageFetcher.formData.get("message") : null;
+
+  const displayStaffMessages = useMemo(() => {
+    if (!optimisticText) return messages;
+    return [
+      ...messages,
+      {
+        _id: "temp-" + Date.now(),
+        sender: user.userId,
+        senderName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "You",
+        message: optimisticText,
+        createdAt: new Date().toISOString(),
+        isFromMe: true,
+      },
+    ];
+  }, [messages, optimisticText, user]);
+
+  const handleSendReply = (e) => {
+    if (e) e.preventDefault();
+    const text = replyText.trim();
+    if (!text) return;
+    messageFetcher.submit(
+      {
+        _intent: "send_message",
+        recipientId: managementRecipientId,
+        message: text,
+      },
+      { method: "post", action: "/api/messages" }
+    );
+    setReplyText("");
+  };
+
+  useEffect(() => {
+    if (activeTab === "messages") {
+      staffMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [activeTab, displayStaffMessages.length]);
 
   // Task Update Modal State
   const [activeTaskModal, setActiveTaskModal] = useState(null);
@@ -282,6 +334,37 @@ export default function StaffDashboard({
       {/* Main Content: Tasks & Attendance Tabs + Quick Links */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
+          {/* Unread Message Notice Banner */}
+          {unreadMessagesCount > 0 && (
+            <div
+              onClick={() => {
+                setActiveTab("messages");
+                if (managementRecipientId) {
+                  messageFetcher.submit(
+                    { _intent: "mark_read", senderId: managementRecipientId },
+                    { method: "post", action: "/api/messages" }
+                  );
+                }
+              }}
+              className="rounded-2xl border border-indigo-200 bg-indigo-50/90 p-4 shadow-sm flex items-center justify-between gap-3 cursor-pointer hover:bg-indigo-100/90 transition"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-indigo-950">
+                    You have {unreadMessagesCount} new message{unreadMessagesCount > 1 ? "s" : ""} from Management
+                  </p>
+                  <p className="text-xs text-indigo-700">Click to read management instructions and send your reply</p>
+                </div>
+              </div>
+              <span className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-xs shrink-0 flex items-center gap-1">
+                Reply <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          )}
+
           {/* Sub-Navigation Tabs */}
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
             <div className="flex items-center gap-2 flex-wrap">
@@ -322,6 +405,32 @@ export default function StaffDashboard({
               >
                 <History className="h-3.5 w-3.5" />
                 Attendance Record ({attendanceHistory?.length || 0})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("messages");
+                  if (unreadMessagesCount > 0 && managementRecipientId) {
+                    messageFetcher.submit(
+                      { _intent: "mark_read", senderId: managementRecipientId },
+                      { method: "post", action: "/api/messages" }
+                    );
+                  }
+                }}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
+                  activeTab === "messages"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Messages & Replies ({displayStaffMessages?.length || 0})
+                {unreadMessagesCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">
+                    {unreadMessagesCount}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -614,6 +723,121 @@ export default function StaffDashboard({
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 4: Messages from Management & Staff Replies */}
+          {activeTab === "messages" && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-indigo-600" />
+                    Messages from Management
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Read announcements, shift updates, and instructions from office management, and send your reply
+                  </p>
+                </div>
+              </div>
+
+              {/* Chat Thread */}
+              <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 h-[420px] overflow-y-auto space-y-3.5">
+                {displayStaffMessages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-2">
+                      <MessageSquare className="w-6 h-6" />
+                    </div>
+                    <p className="font-bold text-sm text-slate-800">No Messages Yet</p>
+                    <p className="text-xs text-slate-500 max-w-xs mt-1">
+                      You do not have any incoming messages from management. You can also send a message or question to management below.
+                    </p>
+                  </div>
+                ) : (
+                  displayStaffMessages.map((msg) => {
+                    const isMyReply = msg.isFromMe;
+                    return (
+                      <div
+                        key={msg._id}
+                        className={`flex items-end gap-2.5 ${isMyReply ? "justify-end" : "justify-start"}`}
+                      >
+                        {!isMyReply && (
+                          <div className="w-8 h-8 rounded-full bg-indigo-700 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                            M
+                          </div>
+                        )}
+
+                        <div
+                          className={`max-w-md rounded-2xl p-3.5 shadow-2xs ${
+                            isMyReply
+                              ? "bg-indigo-600 text-white rounded-br-xs"
+                              : "bg-white border border-slate-200 text-slate-900 rounded-bl-xs"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3 mb-1">
+                            <span className={`text-xs font-bold ${isMyReply ? "text-indigo-100" : "text-slate-900"}`}>
+                              {isMyReply ? "You (Staff Reply)" : msg.senderName || "Management"}
+                            </span>
+                            <span className={`text-[10px] ${isMyReply ? "text-indigo-200" : "text-slate-400"}`}>
+                              {msg.createdAt ? formatTime12(msg.createdAt) : ""}
+                            </span>
+                          </div>
+
+                          <p className={`text-xs leading-relaxed whitespace-pre-wrap ${isMyReply ? "text-white" : "text-slate-800"}`}>
+                            {msg.message}
+                          </p>
+
+                          {isMyReply && (
+                            <div className="flex justify-end items-center gap-1 mt-1 text-[10px] text-indigo-200">
+                              <Check className="w-3 h-3" /> Sent
+                            </div>
+                          )}
+                        </div>
+
+                        {isMyReply && (
+                          <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                            {user.firstName?.charAt(0).toUpperCase() || "S"}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={staffMessagesEndRef} />
+              </div>
+
+              {/* Reply Box */}
+              <form onSubmit={handleSendReply} className="flex items-end gap-2 pt-1">
+                <div className="flex-1">
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendReply();
+                      }
+                    }}
+                    rows={2}
+                    placeholder="Type your reply to management... (Press Enter to send)"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSendingMessage || !replyText.trim()}
+                  className="h-10 px-4 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 disabled:opacity-50 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0 mb-1"
+                >
+                  {isSendingMessage ? (
+                    "Sending..."
+                  ) : (
+                    <>
+                      <span>Send Reply</span>
+                      <SendHorizontal className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
           )}
         </div>

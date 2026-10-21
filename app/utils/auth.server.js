@@ -42,28 +42,38 @@ function getCookieHeader(reqOrRequest) {
    Session: minimal claims
    ========================= */
 
+const requestClaimsCache = new WeakMap();
+const requestUserCache = new WeakMap();
+
 export async function getUserFromRequest(reqOrRequest) {
+  if (reqOrRequest && typeof reqOrRequest === "object" && requestClaimsCache.has(reqOrRequest)) {
+    return requestClaimsCache.get(reqOrRequest);
+  }
+
   const session = await getSession(getCookieHeader(reqOrRequest));
   const userId = session.get("userId");
   const roles = session.get("roles") || [];
-  let organizationId = session.get("organizationId") || null;
+  let organizationId = session.get("organizationId");
 
   if (!userId) return null;
 
   // If organizationId is missing from the session (e.g. existing account pre-dating
   // the Organization flow), look it up from the DB and return it.
-  // The session cookie itself is NOT rewritten here — that happens on next login.
-  if (!organizationId) {
+  if (organizationId === undefined) {
     try {
       await connect();
       const user = await User.findById(userId).select("organizationId").lean();
-      if (user?.organizationId) organizationId = String(user.organizationId);
+      organizationId = user?.organizationId ? String(user.organizationId) : null;
     } catch {
-      // Non-fatal — proceed without organizationId
+      organizationId = null;
     }
   }
 
-  return { userId: String(userId), roles, organizationId };
+  const claims = { userId: String(userId), roles, organizationId: organizationId || null };
+  if (reqOrRequest && typeof reqOrRequest === "object") {
+    requestClaimsCache.set(reqOrRequest, claims);
+  }
+  return claims;
 }
 
 
@@ -78,6 +88,10 @@ export async function getUserFromRequestOrRedirect(reqOrRequest, redirectTo = "/
    ========================= */
 
 export async function getUserFromSession(reqOrRequest) {
+  if (reqOrRequest && typeof reqOrRequest === "object" && requestUserCache.has(reqOrRequest)) {
+    return requestUserCache.get(reqOrRequest);
+  }
+
   const claims = await getUserFromRequest(reqOrRequest);
   if (!claims) return null;
 
@@ -96,6 +110,10 @@ export async function getUserFromSession(reqOrRequest) {
 
   // Never expose password
   delete user.password;
+
+  if (reqOrRequest && typeof reqOrRequest === "object") {
+    requestUserCache.set(reqOrRequest, user);
+  }
   return user;
 }
 

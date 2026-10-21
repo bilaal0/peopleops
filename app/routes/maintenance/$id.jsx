@@ -747,14 +747,25 @@ export default function MaintenanceDetail() {
                           </p>
                         </div>
                       </div>
-                      <a
-                        href={`/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-[#2563EB] hover:underline font-semibold shrink-0"
-                      >
-                        View
-                      </a>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={`/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-[#2563EB] hover:underline font-semibold"
+                        >
+                          View
+                        </a>
+                        <a
+                          href={`/documents/s3-download?key=${encodeURIComponent(doc.s3Key)}&download=1&fileName=${encodeURIComponent(doc.fileName)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-slate-500 hover:text-slate-700 font-semibold"
+                          title="Download"
+                        >
+                          Download
+                        </a>
+                      </div>
                     </div>
                   );
                 })}

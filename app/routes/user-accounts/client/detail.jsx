@@ -7,9 +7,10 @@ import { DocumentType } from "../../../models/documentType.server.js";
 import { connect } from "../../../config/db.server.js";
 import { fmtDate } from "../../../utils/date.js";
 import UKDateInput from "../../../components/ui/UKDateInput.jsx";
+import DocumentViewer from "../../../components/documents/DocumentViewer.jsx";
 import {
   FileText, Download, Upload, ShieldCheck, AlertCircle,
-  CheckCircle2, Clock, X, Plus, Trash2,
+  CheckCircle2, Clock, X, Plus, Trash2, Eye,
 } from "lucide-react";
 
 export async function loader({ params, request }) {
@@ -23,6 +24,7 @@ export async function loader({ params, request }) {
 
   const docs = await Document.find({ entityId: params.id, deleted: false })
     .populate("docType", "name")
+    .populate("uploadedBy", "firstName lastName title email")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -40,10 +42,15 @@ export async function loader({ params, request }) {
       title:      d.title || null,
       docType:    d.docType ? { name: d.docType.name } : null,
       fileSize:   d.fileSize || null,
+      mimeType:   d.mimeType || null,
+      s3Key:      d.s3Key || null,
       status:     d.status || "pending",
       expiryDate: d.expiryDate || null,
       notes:      d.notes || null,
       createdAt:  d.createdAt,
+      uploadedBy: d.uploadedBy
+        ? `${d.uploadedBy.title ? d.uploadedBy.title + " " : ""}${d.uploadedBy.firstName || ""} ${d.uploadedBy.lastName || ""}`.trim() || d.uploadedBy.email
+        : "Unknown",
     })),
     documentTypes: docTypes.map(dt => ({ _id: dt._id.toString(), name: dt.name })),
     organizationId: user.organizationId?.toString() || null,
@@ -82,7 +89,7 @@ function DocDeleteButton({ documentId }) {
   return (
     <fetcher.Form method="post" action="/documents/delete" onSubmit={(e) => { if (!confirm("Delete this document?")) e.preventDefault(); }}>
       <input type="hidden" name="documentId" value={documentId} />
-      <button type="submit" className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition" title="Delete">
+      <button type="submit" className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer" title="Delete">
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </fetcher.Form>
@@ -103,7 +110,7 @@ function UploadModal({ clientId, organizationId, documentTypes, onClose }) {
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h2 className="text-sm font-bold text-slate-900">Upload Document</h2>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
         <fetcher.Form method="post" action="/documents/upload" encType="multipart/form-data" className="p-5 space-y-4">
           <input type="hidden" name="entityType" value="client" />
@@ -120,11 +127,11 @@ function UploadModal({ clientId, organizationId, documentTypes, onClose }) {
               ? <p className="text-sm font-semibold text-emerald-600 truncate max-w-xs">{fileName}</p>
               : <>
                   <p className="text-sm font-semibold text-slate-700">Click to choose a file</p>
-                  <p className="text-xs text-slate-400">PDF, JPG or PNG — up to 10 MB</p>
+                  <p className="text-xs text-slate-400">PDF, JPG, PNG, MP3 or WAV — up to 10 MB</p>
                 </>
             }
           </div>
-          <input ref={fileRef} type="file" name="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFileName(e.target.files?.[0]?.name || "")} />
+          <input ref={fileRef} type="file" name="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.mp3,.wav,.wave,audio/mpeg,audio/wav,audio/*" onChange={(e) => setFileName(e.target.files?.[0]?.name || "")} />
 
           {/* Title */}
           <div>
@@ -153,8 +160,8 @@ function UploadModal({ clientId, organizationId, documentTypes, onClose }) {
           {fetcher.data?.success && <p className="text-sm text-green-600 font-semibold flex items-center gap-1"><CheckCircle2 className="h-4 w-4" />Uploaded!</p>}
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Cancel</button>
-            <button type="submit" disabled={isSubmitting || !fileName} className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Cancel</button>
+            <button type="submit" disabled={isSubmitting || !fileName} className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition flex items-center justify-center gap-2 cursor-pointer">
               {isSubmitting ? "Uploading..." : <><Upload className="h-3.5 w-3.5" />Upload</>}
             </button>
           </div>
@@ -172,7 +179,7 @@ function DocumentsPanel({ documents, clientId, organizationId, documentTypes }) 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
-        <button onClick={() => setShowUpload(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">
+        <button onClick={() => setShowUpload(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition cursor-pointer">
           <Plus className="h-3.5 w-3.5" />Upload Document
         </button>
       </div>
@@ -196,14 +203,26 @@ function DocumentsPanel({ documents, clientId, organizationId, documentTypes }) 
                   <p className="text-sm font-semibold text-slate-900 truncate">{doc.title || doc.fileName}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     {doc.docType && <span className="text-[10px] font-medium text-slate-500">{doc.docType.name}</span>}
-                    <span className="text-[10px] text-slate-400">{fmtDate(doc.createdAt)}</span>
                     {doc.fileSize && <span className="text-[10px] text-slate-400">{(doc.fileSize / 1024).toFixed(1)} KB</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <ExpiryBadge expiryDate={doc.expiryDate} />
                   <VerificationToggle documentId={doc._id} currentStatus={doc.status} />
-                  <button onClick={() => window.open(`/documents/${doc._id}/download`, "_blank")} className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition" title="Download">
+                  <DocumentViewer
+                    documentId={doc._id}
+                    fileName={doc.fileName}
+                    mimeType={doc.mimeType || "application/octet-stream"}
+                    uploadedBy={doc.uploadedBy}
+                    uploadedAt={doc.createdAt}
+                    status={doc.status}
+                    docTypeName={doc.docType?.name || "Client Document"}
+                    fileSize={doc.fileSize}
+                    iconOnly={true}
+                    buttonClassName="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition cursor-pointer"
+                    title="View document"
+                  />
+                  <button onClick={() => window.open(`/documents/${doc._id}/download`, "_blank")} className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition cursor-pointer" title="Download document">
                     <Download className="h-3.5 w-3.5" />
                   </button>
                   <DocDeleteButton documentId={doc._id} />
@@ -260,7 +279,7 @@ export default function ClientDetailPage() {
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs: Profile and Documents */}
           <div className="flex gap-1 mt-6 border-b border-gray-200">
             {[
               { key: "profile",   label: "Profile" },
@@ -268,6 +287,7 @@ export default function ClientDetailPage() {
             ].map(({ key, label }) => (
               <button
                 key={key}
+                type="button"
                 onClick={() => setActiveTab(key)}
                 className={`px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition cursor-pointer ${
                   activeTab === key
@@ -288,11 +308,11 @@ export default function ClientDetailPage() {
           <div className="max-w-4xl bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-6">
             <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 font-bold text-2xl flex items-center justify-center border border-emerald-200">
-                {client.firstName?.charAt(0).toUpperCase()}
+                {client.firstName?.charAt(0).toUpperCase() || client.companyName?.charAt(0)?.toUpperCase() || "C"}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{fullName}</h2>
-                <p className="text-sm text-gray-500">{client.email}</p>
+                <h2 className="text-xl font-bold text-gray-900">{fullName || companyName}</h2>
+                <p className="text-sm text-gray-500">{client.email || "No email"}</p>
                 <div className="mt-2 flex items-center gap-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${isCompany ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}>
                     {isCompany ? "Company Client" : "Individual Client"}
@@ -306,7 +326,7 @@ export default function ClientDetailPage() {
             <div>
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Client Overview</h3>
               <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-sm">
-                <div><dt className="text-gray-500 text-xs mb-1">Email Address</dt><dd className="font-medium text-gray-900 break-all">{client.email}</dd></div>
+                <div><dt className="text-gray-500 text-xs mb-1">Email Address</dt><dd className="font-medium text-gray-900 break-all">{client.email || "—"}</dd></div>
                 <div><dt className="text-gray-500 text-xs mb-1">Telephone Number</dt><dd className="font-medium text-gray-900">{client.phone || client.telephoneNo || "—"}</dd></div>
                 {companyName && (
                   <div><dt className="text-gray-500 text-xs mb-1">Company Name</dt><dd className="font-medium text-gray-900">{companyName}</dd></div>

@@ -6,6 +6,7 @@ import { Organization } from "../models/organization.server.js";
 import { User } from "../models/user.server.js";
 import { Attendance } from "../models/attendance.server.js";
 import { Rota } from "../models/rota.server.js";
+import { Message } from "../models/message.server.js";
 import { getOrganizationDashboardData } from "../utils/dashboard.server.js";
 import SuperAdminDashboard from "../components/dashboard/SuperAdminDashboard.jsx";
 import OrganizationDashboard from "../components/dashboard/OrganizationDashboard.jsx";
@@ -74,6 +75,7 @@ export async function loader({ request }) {
 
   let attendanceHistory = [];
   let previousTasks = [];
+  let messages = [];
 
   // If it's a staff dashboard, filter todayRota and load past records
   if (isEmployeeOnly && user.userId) {
@@ -81,7 +83,7 @@ export async function loader({ request }) {
       r => r.employeeId === user.userId.toString()
     );
 
-    const [pastAttendance, pastRota] = await Promise.all([
+    const [pastAttendance, pastRota, staffMessages] = await Promise.all([
       Attendance.find({ user: user.userId })
         .sort({ date: -1, createdAt: -1 })
         .limit(20)
@@ -95,7 +97,30 @@ export async function loader({ request }) {
         .sort({ date: -1, startTime: -1 })
         .limit(20)
         .lean(),
+      Message.find({
+        $or: [
+          { sender: user.userId },
+          { recipient: user.userId },
+        ],
+      })
+        .sort({ createdAt: 1 })
+        .lean(),
     ]);
+
+    messages = staffMessages.map((m) => ({
+      _id: m._id.toString(),
+      sender: m.sender?.toString() || "",
+      recipient: m.recipient?.toString() || "",
+      senderName: m.senderName || "Management",
+      senderRole: m.senderRole || "",
+      recipientName: m.recipientName || "",
+      message: m.message || "",
+      read: Boolean(m.read),
+      readAt: m.readAt ? m.readAt.toISOString() : null,
+      status: m.status || "sent",
+      createdAt: m.createdAt ? m.createdAt.toISOString() : new Date().toISOString(),
+      isFromMe: m.sender?.toString() === user.userId,
+    }));
 
     attendanceHistory = pastAttendance.map((rec) => ({
       _id: rec._id.toString(),
@@ -130,6 +155,7 @@ export async function loader({ request }) {
     todayAttendance,
     attendanceHistory,
     previousTasks,
+    messages,
   };
 }
 
@@ -144,6 +170,7 @@ export default function Dashboard() {
     todayAttendance,
     attendanceHistory,
     previousTasks,
+    messages = [],
   } = useLoaderData();
 
   if (isSuperAdmin && !organization) {
@@ -159,6 +186,7 @@ export default function Dashboard() {
         todayAttendance={todayAttendance}
         attendanceHistory={attendanceHistory}
         previousTasks={previousTasks}
+        messages={messages}
       />
     );
   }

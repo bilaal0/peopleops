@@ -7,9 +7,10 @@ import { DocumentType } from "../../models/documentType.server.js";
 import { connect } from "../../config/db.server.js";
 import { fmtDate } from "../../utils/date.js";
 import UKDateInput from "../../components/ui/UKDateInput.jsx";
+import DocumentViewer from "../../components/documents/DocumentViewer.jsx";
 import {
   FileText, Download, AlertCircle, CheckCircle2, Clock,
-  ShieldCheck, Search, Upload, X, FolderOpen, Plus, Trash2,
+  ShieldCheck, Search, Upload, X, FolderOpen, Plus, Trash2, Eye,
 } from "lucide-react";
 
 // ── Loader ────────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ export async function loader({ request }) {
   const [docs, staffList, clientList, docTypes] = await Promise.all([
     Document.find(documentQuery)
       .populate("docType", "name category")
+      .populate("uploadedBy", "firstName lastName title email")
       .sort({ createdAt: -1 })
       .lean()
       .catch(() => []),
@@ -62,10 +64,15 @@ export async function loader({ request }) {
       docType: d.docType?.name || null,
       category: d.docType?.category || "general",
       fileSize: d.fileSize || null,
+      mimeType: d.mimeType || null,
+      s3Key: d.s3Key || null,
       status: d.status || "pending",
       expiryDate: d.expiryDate || null,
       notes: d.notes || null,
       createdAt: d.createdAt,
+      uploadedBy: d.uploadedBy
+        ? `${d.uploadedBy.title ? d.uploadedBy.title + " " : ""}${d.uploadedBy.firstName || ""} ${d.uploadedBy.lastName || ""}`.trim() || d.uploadedBy.email
+        : "Unknown",
     })),
     organizationId: user.organizationId?.toString() || null,
     isEmployeeOnly,
@@ -183,15 +190,27 @@ function DocumentCard({ doc, isEmployeeOnly }) {
         </div>
         {doc.notes && <p className="mt-3 text-xs text-slate-500 line-clamp-2 italic">{doc.notes}</p>}
       </div>
-      <div className="mt-5 flex items-center justify-between pt-4 border-t border-slate-100">
-        <span className="text-xs text-slate-400">{fmtDate(doc.createdAt)}</span>
+      <div className="mt-5 flex items-center justify-end pt-4 border-t border-slate-100">
         <div className="flex items-center gap-1">
           {!isEmployeeOnly && <DeleteButton documentId={doc._id} />}
+          <DocumentViewer
+            documentId={doc._id}
+            fileName={doc.fileName}
+            mimeType={doc.mimeType || "application/octet-stream"}
+            uploadedBy={doc.uploadedBy}
+            uploadedAt={doc.createdAt}
+            status={doc.status}
+            docTypeName={doc.docType || "General"}
+            fileSize={doc.fileSize}
+            iconOnly={true}
+            buttonClassName="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition"
+            title="View document"
+          />
           <button
             type="button"
             onClick={() => window.open(`/documents/${doc._id}/download`, "_blank")}
             className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition"
-            title="Download"
+            title="Download document"
           >
             <Download className="h-4 w-4" />
           </button>
@@ -283,7 +302,7 @@ function UploadModal({ people, organizationId, documentTypes, onClose }) {
                 ? <p className="text-sm font-semibold text-indigo-600 truncate max-w-xs">{fileName}</p>
                 : <>
                   <p className="text-sm font-semibold text-slate-700">Click to choose a file</p>
-                  <p className="text-xs text-slate-400">PDF, JPG or PNG — up to 10 MB</p>
+                  <p className="text-xs text-slate-400">PDF, JPG, PNG, MP3 or WAV — up to 10 MB</p>
                 </>
               }
             </div>
@@ -292,7 +311,7 @@ function UploadModal({ people, organizationId, documentTypes, onClose }) {
               type="file"
               name="file"
               className="hidden"
-              accept=".pdf,.jpg,.jpeg,.png"
+              accept=".pdf,.jpg,.jpeg,.png,.mp3,.wav,.wave,audio/mpeg,audio/wav,audio/*"
               onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
             />
           </div>
