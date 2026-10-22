@@ -1197,7 +1197,8 @@ export default function StaffDetailPage() {
                         : "—"}
                     </dd>
                   </div>
-                  <div className="sm:col-span-2"><dt className="text-gray-500 text-xs">Certificate of Sponsorship (COS)</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.cos || staff.cosNumber || "—"}</dd></div>
+                  <div><dt className="text-gray-500 text-xs">Certificate of Sponsorship (COS)</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.cos || staff.cosNumber || "—"}</dd></div>
+                  <div><dt className="text-gray-500 text-xs">COS Expiry Date</dt><dd className="font-medium text-gray-900 mt-0.5">{staff.cosExpiry ? new Date(staff.cosExpiry).toLocaleDateString("en-GB") : "—"}</dd></div>
                 </dl>
               </div>
 

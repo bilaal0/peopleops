@@ -1,6 +1,6 @@
 // routes/tenancies/index.jsx — Tenancy list (Server-side Pagination)
 import { useState, useEffect } from "react";
-import { Link, useLoaderData, useSubmit, useNavigation, Form } from "react-router-dom";
+import { Link, useLoaderData, useSubmit, useNavigation, Form } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { Tenancy } from "../../models/tenancy.server.js";

@@ -1,6 +1,6 @@
 // routes/compliance/dashboard.jsx
 // AgentShield Compliance Dashboard — Pure Document & Tenancy Compliance Tracker
-import { useLoaderData, Link } from "react-router-dom";
+import { useLoaderData, Link } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { getOrganizationDashboardData } from "../../utils/dashboard.server.js";

@@ -1,6 +1,6 @@
 // routes/tenants/index.jsx — Tenants list
 import { useState, useMemo } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { User } from "../../models/user.server.js";

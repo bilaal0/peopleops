@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 // Book a Demo — public page replacing self-signup
 // Proplet is invitation-only. Organizations must book a demo first.

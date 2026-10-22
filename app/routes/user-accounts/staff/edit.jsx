@@ -56,6 +56,8 @@ export async function action({ params, request }) {
   const salaryRaw = formData.get("salary")?.toString().trim();
   const salary = salaryRaw && !isNaN(Number(salaryRaw)) ? Number(salaryRaw) : null;
   const cos = formData.get("cos")?.toString().trim();
+  const cosExpiryRaw = formData.get("cosExpiry")?.toString().trim();
+  const cosExpiry = cosExpiryRaw ? new Date(cosExpiryRaw) : null;
 
   const bankAccountName = formData.get("bankAccountName")?.toString().trim();
   const bankAccountNumber = formData.get("bankAccountNumber")?.toString().trim();
@@ -110,6 +112,7 @@ export async function action({ params, request }) {
       salary,
       cosNumber: cos || null,
       cos: cos || null,
+      cosExpiry: cosExpiry || null,
       bankDetails,
       city,
       postTown: city,

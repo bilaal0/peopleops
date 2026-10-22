@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 import { useLoaderData, useActionData, Form } from "react-router";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 

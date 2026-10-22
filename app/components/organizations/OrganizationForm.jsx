@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Form } from "react-router-dom";
+import { Form } from "react-router";
 import Button from "../ui/Button";
 import { validateOrganization } from "../../utils/validator";
 import { getOrganizationLogoUrl } from "../../utils/organizationLogo.js";

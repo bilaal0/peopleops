@@ -2,7 +2,7 @@
 // Reusable upload + document list component for any entity.
 // Usage: <DocumentUploader entityType="landlord" entityId={l._id} docTypes={LANDLORD_DOC_TYPES} docs={documents} layout="grid" />
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
-import { useFetcher } from "react-router-dom";
+import { useFetcher } from "react-router";
 import { fmtDate } from "../../utils/date.js";
 import UKDateInput from "../ui/UKDateInput.jsx";
 

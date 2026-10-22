@@ -1,5 +1,5 @@
 // routes/tenants/edit.jsx — Edit Tenant form
-import { useActionData, useLoaderData } from "react-router-dom";
+import { useActionData, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect, data } from "react-router";
 import { User } from "../../models/user.server.js";

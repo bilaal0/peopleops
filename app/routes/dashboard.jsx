@@ -1,5 +1,5 @@
 import { redirect, Link } from "react-router";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import { getUserFromRequest } from "../utils/auth.server.js";
 import { connect } from "../config/db.server.js";
 import { Organization } from "../models/organization.server.js";

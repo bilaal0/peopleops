@@ -2,7 +2,7 @@
 // Full property detail page with hero image, gallery, compliance strip,
 // alert banners, and four tabbed sections.
 import { useState, useEffect, useRef } from "react";
-import { useLoaderData, Link, useSearchParams } from "react-router-dom";
+import { useLoaderData, Link, useSearchParams } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { Property } from "../../models/property.server.js";

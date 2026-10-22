@@ -2,7 +2,7 @@
 // Contractor detail page. Full details + job history table + edit/mark-inactive actions.
 
 import { useState } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router";
 import { redirect, useActionData } from "react-router";
 import { fmtDate } from "../../../utils/date.js";
 import { getUserFromRequest } from "../../../utils/auth.server.js";

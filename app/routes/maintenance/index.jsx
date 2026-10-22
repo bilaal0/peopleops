@@ -2,7 +2,7 @@
 // Maintenance Jobs dashboard / listing.
 // Enforces organization isolation, features KPI tiles, filters, and dynamic overdue/Awaab's Law banners.
 
-import { Link, useLoaderData, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { redirect } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";

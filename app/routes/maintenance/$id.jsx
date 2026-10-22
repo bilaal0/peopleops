@@ -4,7 +4,7 @@
 // note submission timeline, Awaab's Law countdown alerts, and sidebar link details.
 
 import { useState } from "react";
-import { Link, useLoaderData, useNavigation } from "react-router-dom";
+import { Link, useLoaderData, useNavigation } from "react-router";
 import { redirect, data } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { connect } from "../../config/db.server.js";

@@ -1,6 +1,6 @@
 // routes/properties/add.jsx — Add Property
 // Landlord selector with AML amber warning. Pre-selects landlord from query param.
-import { useLoaderData, useActionData, useNavigation, Link } from "react-router-dom";
+import { useLoaderData, useActionData, useNavigation, Link } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect, data } from "react-router";
 import { Property } from "../../models/property.server.js";

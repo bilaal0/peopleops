@@ -1,6 +1,6 @@
 // routes/tenancies/detail.jsx -- SECTION 5: Tenancy Detail Page with Tabs
 import { useState, useEffect, useRef } from "react";
-import { useLoaderData, Link, useSearchParams, Form, useFetcher } from "react-router-dom";
+import { useLoaderData, Link, useSearchParams, Form, useFetcher } from "react-router";
 import { CheckCircle, AlertTriangle, XCircle, Info, PoundSterling, X } from "lucide-react";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect, data } from "react-router";

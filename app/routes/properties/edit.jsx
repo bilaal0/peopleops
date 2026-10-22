@@ -1,6 +1,6 @@
 // routes/properties/edit.jsx — Edit Property
 // Reuses shared PropertyForm component — same UX as add.
-import { useLoaderData, useActionData, useNavigation, Link } from "react-router-dom";
+import { useLoaderData, useActionData, useNavigation, Link } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect, data } from "react-router";
 import { Property } from "../../models/property.server.js";

@@ -3,7 +3,7 @@
 // Uses useFetcher to POST to /tenancies/:id/evidence-bundle.
 // Auto-triggers browser download when the presigned URL is returned.
 
-import { useFetcher } from "react-router-dom";
+import { useFetcher } from "react-router";
 import { useEffect } from "react";
 
 export function EvidenceVaultButton({ tenancyId }) {

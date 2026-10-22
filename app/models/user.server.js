@@ -41,6 +41,7 @@ const userSchema = new Schema(
     salary: { type: Number, default: null },
     cosNumber: { type: String, trim: true },
     cos: { type: String, trim: true },
+    cosExpiry: { type: Date, default: null },
     bankDetails: {
       accountName: { type: String, trim: true, default: null },
       accountNumber: { type: String, trim: true, default: null },

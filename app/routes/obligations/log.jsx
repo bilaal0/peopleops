@@ -1,5 +1,5 @@
 // routes/obligations/log.jsx — Log an obligation declaration
-import { Form, useActionData, useNavigation, useLoaderData } from "react-router-dom";
+import { Form, useActionData, useNavigation, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { logObligation } from "../../services/obligationEngine.server.js";

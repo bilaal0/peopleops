@@ -1,6 +1,6 @@
 // routes/landlords/detail.jsx — Landlord Profile (tabbed)
 import { useState } from "react";
-import { useLoaderData, Link, useSearchParams } from "react-router-dom";
+import { useLoaderData, Link, useSearchParams } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { User } from "../../models/user.server.js";

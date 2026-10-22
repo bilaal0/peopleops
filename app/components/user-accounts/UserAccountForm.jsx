@@ -149,7 +149,7 @@ export default function UserAccountForm({
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
               Employment & Sponsorship Info
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               <div>
                 <label className={labelClass}>Job Title <span className="text-red-500">*</span></label>
                 <input
@@ -194,6 +194,16 @@ export default function UserAccountForm({
                   defaultValue={initialData?.cos || initialData?.cosNumber || ""}
                   placeholder="e.g. W123456789"
                   className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>COS Expiry Date</label>
+                <UKDateInput
+                  name="cosExpiry"
+                  defaultValue={formatDate(initialData?.cosExpiry)}
+                  className={inputClass}
+                  placeholder="DD/MM/YYYY"
                 />
               </div>
             </div>

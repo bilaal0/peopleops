@@ -1,6 +1,6 @@
 // routes/obligations/upload.jsx — Upload a document for an obligation
 // (stub — full S3 upload implementation in Day 2)
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { Obligation } from "../../models/obligation.server.js";

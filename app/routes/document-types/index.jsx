@@ -1,7 +1,7 @@
 // routes/document-types/index.jsx
 // SUPER_ADMIN only dashboard to manage dynamic document types
 import { useState, useEffect, useMemo } from "react";
-import { useLoaderData, useSubmit, useActionData } from "react-router-dom";
+import { useLoaderData, useSubmit, useActionData } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect, data } from "react-router";
 import { DocumentType } from "../../models/documentType.server.js";

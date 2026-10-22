@@ -1,6 +1,6 @@
 // routes/compliance/bundle.jsx — Evidence Vault bundle export (stub)
 // Day 2: PDF generation using puppeteer/pdf-lib
-import { useLoaderData, Link } from "react-router-dom";
+import { useLoaderData, Link } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { Tenancy } from "../../models/tenancy.server.js";

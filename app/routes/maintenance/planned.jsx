@@ -3,7 +3,7 @@
 // Create schedules, toggle active status, soft delete, and trigger manual job generator runs.
 
 import { useState } from "react";
-import { Link, useLoaderData, useNavigation, useActionData } from "react-router-dom";
+import { Link, useLoaderData, useNavigation, useActionData } from "react-router";
 import { redirect, data } from "react-router";
 import { fmtDate } from "../../utils/date.js";
 import UKDateInput from "../../components/ui/UKDateInput.jsx";

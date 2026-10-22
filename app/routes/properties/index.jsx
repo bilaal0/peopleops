@@ -1,6 +1,6 @@
 // routes/properties/index.jsx — Properties listing (card-based)
 import { useState } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../../utils/auth.server.js";
 import { redirect } from "react-router";
 import { Property } from "../../models/property.server.js";
