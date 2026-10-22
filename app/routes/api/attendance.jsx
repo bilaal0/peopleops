@@ -26,11 +26,14 @@ export async function loader({ request }) {
   }).sort({ createdAt: -1 }).lean();
 
   const currentRecord = records[0] || null;
+  const isClockedIn = Boolean(currentRecord && !currentRecord.clockOutTime);
+  const isClockedOut = Boolean(currentRecord && currentRecord.clockOutTime);
 
   return data({
     records,
     currentRecord,
-    isClockedIn: currentRecord?.status === "clocked_in",
+    isClockedIn,
+    isClockedOut,
   });
 }
 
@@ -70,7 +73,7 @@ export async function action({ request }) {
       date: todayLocalMidnight,
       clockInTime: now,
       markedAt: now,
-      status: "marked",
+      status: "clocked_in",
       notes,
     });
 
@@ -82,6 +85,8 @@ export async function action({ request }) {
         status: record.status,
         markedAt: record.markedAt ? record.markedAt.toISOString() : now.toISOString(),
         clockInTime: record.clockInTime ? record.clockInTime.toISOString() : now.toISOString(),
+        clockOutTime: null,
+        totalHours: 0,
         notes: record.notes || "",
       },
     });
@@ -97,6 +102,10 @@ export async function action({ request }) {
       return data({ error: "No attendance session found for today." }, { status: 400 });
     }
 
+    if (active.clockOutTime) {
+      return data({ error: "You have already clocked out for today." }, { status: 400 });
+    }
+
     const clockOutTime = new Date();
     const startTime = active.clockInTime || active.markedAt || active.createdAt;
     const durationMs = clockOutTime.getTime() - new Date(startTime).getTime();
@@ -104,13 +113,25 @@ export async function action({ request }) {
 
     active.clockOutTime = clockOutTime;
     active.totalHours = totalHours;
-    active.status = "marked";
+    active.status = "clocked_out";
     if (notes) {
       active.notes = active.notes ? `${active.notes}\n${notes}` : notes;
     }
     await active.save();
 
-    return data({ success: true, message: "Attendance updated.", record: active });
+    return data({
+      success: true,
+      message: "Clocked out successfully.",
+      record: {
+        _id: active._id.toString(),
+        status: active.status,
+        markedAt: active.markedAt?.toISOString() || null,
+        clockInTime: active.clockInTime?.toISOString() || null,
+        clockOutTime: active.clockOutTime.toISOString(),
+        totalHours: active.totalHours,
+        notes: active.notes || "",
+      },
+    });
   }
 
   return data({ error: "Invalid intent" }, { status: 400 });

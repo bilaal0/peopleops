@@ -127,6 +127,9 @@ export async function loader({ request }) {
       date: rec.date ? rec.date.toISOString() : rec.createdAt?.toISOString() || null,
       status: rec.status || "marked",
       markedAt: rec.markedAt?.toISOString() || rec.clockInTime?.toISOString() || rec.createdAt?.toISOString() || null,
+      clockInTime: rec.clockInTime?.toISOString() || null,
+      clockOutTime: rec.clockOutTime?.toISOString() || null,
+      totalHours: rec.totalHours || 0,
       notes: rec.notes || "",
     }));
 

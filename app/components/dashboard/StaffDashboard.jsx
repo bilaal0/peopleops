@@ -21,6 +21,7 @@ import {
   SendHorizontal,
   Mail,
   CheckCheck,
+  LogOut,
 } from "lucide-react";
 
 function formatTime12(dateObjOrString) {
@@ -77,8 +78,12 @@ export default function StaffDashboard({
   // Active attendance state
   const currentAttendance = attendanceFetcher.data?.record || todayAttendance;
   const isMarkedToday = Boolean(currentAttendance);
+  const isClockedOutToday = Boolean(currentAttendance?.clockOutTime);
+  const isClockedInToday = Boolean(currentAttendance && !currentAttendance?.clockOutTime);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [modalType, setModalType] = useState("clock_in"); // "clock_in" | "clock_out"
+  const [clockOutNotes, setClockOutNotes] = useState("");
   const [activeTab, setActiveTab] = useState("today_tasks"); // "today_tasks" | "previous_tasks" | "attendance_history" | "messages"
   const [replyText, setReplyText] = useState("");
   const staffMessagesEndRef = useRef(null);
@@ -148,10 +153,17 @@ export default function StaffDashboard({
   };
 
   const handleConfirmAttendance = () => {
-    attendanceFetcher.submit(
-      { _intent: "mark_attendance" },
-      { method: "post", action: "/api/attendance" }
-    );
+    if (modalType === "clock_out") {
+      attendanceFetcher.submit(
+        { _intent: "clock_out", notes: clockOutNotes },
+        { method: "post", action: "/api/attendance" }
+      );
+    } else {
+      attendanceFetcher.submit(
+        { _intent: "mark_attendance" },
+        { method: "post", action: "/api/attendance" }
+      );
+    }
   };
 
   // Close confirmation modal on success
@@ -217,11 +229,13 @@ export default function StaffDashboard({
         </div>
       </div>
 
-      {/* Daily Attendance Card (Mark Attendance) */}
+      {/* Daily Attendance Card (Mark Attendance / Clock Out) */}
       <div
         className={`rounded-2xl border p-6 shadow-sm transition-all ${
-          isMarkedToday
+          isClockedOutToday
             ? "border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30"
+            : isClockedInToday
+            ? "border-blue-200 bg-gradient-to-br from-blue-50/70 via-white to-blue-50/30"
             : "border-slate-200/80 bg-gradient-to-br from-white to-slate-50"
         }`}
       >
@@ -229,13 +243,17 @@ export default function StaffDashboard({
           <div className="flex items-start gap-4">
             <div
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-colors ${
-                isMarkedToday
+                isClockedOutToday
                   ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
+                  : isClockedInToday
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/25"
                   : "bg-indigo-50 text-indigo-600"
               }`}
             >
-              {isMarkedToday ? (
+              {isClockedOutToday ? (
                 <CheckCircle2 className="h-6 w-6" />
+              ) : isClockedInToday ? (
+                <Clock className="h-6 w-6" />
               ) : (
                 <UserCheck className="h-6 w-6" />
               )}
@@ -244,10 +262,18 @@ export default function StaffDashboard({
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-lg font-bold text-slate-900">Daily Attendance</h2>
-                {isMarkedToday ? (
+                {isClockedOutToday ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-0.5 text-xs font-bold text-emerald-800">
                     <Check className="h-3.5 w-3.5" />
-                    Attendance Marked
+                    Clocked Out (Shift Completed)
+                  </span>
+                ) : isClockedInToday ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 border border-blue-300 px-3 py-0.5 text-xs font-bold text-blue-800">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                    </span>
+                    Clocked In (Active Shift)
                   </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
@@ -257,13 +283,21 @@ export default function StaffDashboard({
               </div>
 
               <div className="mt-1 text-sm text-slate-600">
-                {isMarkedToday ? (
+                {isClockedOutToday ? (
                   <span>
-                    Your attendance for today was recorded at{" "}
-                    <strong className="text-emerald-800 font-bold">
-                      {formatTime12(currentAttendance.markedAt || currentAttendance.clockInTime)}
+                    Clocked in at <strong className="text-slate-800 font-bold">{formatTime12(currentAttendance.clockInTime || currentAttendance.markedAt)}</strong>
+                    {" "}· Clocked out at <strong className="text-emerald-800 font-bold">{formatTime12(currentAttendance.clockOutTime)}</strong>
+                    {currentAttendance.totalHours > 0 ? (
+                      <> (<strong>{currentAttendance.totalHours.toFixed(1)} hrs</strong> worked)</>
+                    ) : null}
+                  </span>
+                ) : isClockedInToday ? (
+                  <span>
+                    Clocked in today at{" "}
+                    <strong className="text-blue-900 font-bold">
+                      {formatTime12(currentAttendance.clockInTime || currentAttendance.markedAt)}
                     </strong>
-                    .
+                    . Remember to clock out when your shift ends.
                   </span>
                 ) : (
                   <span>
@@ -275,20 +309,32 @@ export default function StaffDashboard({
           </div>
 
           {/* Action Button */}
-          <div className="flex items-center gap-3">
-            {isMarkedToday ? (
+          <div className="flex items-center gap-3 shrink-0">
+            {isClockedOutToday ? (
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 opacity-90 cursor-default">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Clocked Out for Today
+              </div>
+            ) : isClockedInToday ? (
               <button
                 type="button"
-                disabled
-                className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 opacity-90 cursor-default"
+                onClick={() => {
+                  setModalType("clock_out");
+                  setClockOutNotes("");
+                  setShowConfirmModal(true);
+                }}
+                className="flex items-center gap-2 rounded-xl bg-rose-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm shadow-rose-600/20 hover:bg-rose-700 active:scale-[0.98] transition cursor-pointer"
               >
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                Marked for Today
+                <LogOut className="h-4 w-4" />
+                Clock Out
               </button>
             ) : (
               <button
                 type="button"
-                onClick={() => setShowConfirmModal(true)}
+                onClick={() => {
+                  setModalType("clock_in");
+                  setShowConfirmModal(true);
+                }}
                 className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#162d4a] active:scale-[0.98] transition cursor-pointer"
               >
                 <UserCheck className="h-4 w-4" />
@@ -691,7 +737,9 @@ export default function StaffDashboard({
                     <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
                       <tr>
                         <th className="px-5 py-3 font-bold">Date</th>
-                        <th className="px-5 py-3 font-bold">Marked Time</th>
+                        <th className="px-5 py-3 font-bold">Clock In</th>
+                        <th className="px-5 py-3 font-bold">Clock Out</th>
+                        <th className="px-5 py-3 font-bold">Duration</th>
                         <th className="px-5 py-3 font-bold">Status</th>
                       </tr>
                     </thead>
@@ -702,12 +750,32 @@ export default function StaffDashboard({
                             {formatDateDisplay(rec.date)}
                           </td>
                           <td className="px-5 py-3.5 whitespace-nowrap font-medium text-slate-800">
-                            {formatTime12(rec.markedAt || rec.clockInTime)}
+                            {formatTime12(rec.clockInTime || rec.markedAt)}
+                          </td>
+                          <td className="px-5 py-3.5 whitespace-nowrap font-medium text-slate-800">
+                            {rec.clockOutTime ? (
+                              formatTime12(rec.clockOutTime)
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-5 py-3.5 whitespace-nowrap font-semibold text-slate-900">
+                            {rec.totalHours > 0 ? `${rec.totalHours.toFixed(1)} hrs` : "—"}
                           </td>
                           <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                              <Check className="h-3 w-3" /> Present / Marked
-                            </span>
+                            {rec.status === "clocked_out" || rec.clockOutTime ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Clocked Out
+                              </span>
+                            ) : rec.status === "clocked_in" ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+                                <Clock className="h-3 w-3 text-blue-600" /> Clocked In
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">
+                                <Check className="h-3 w-3" /> Marked
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -897,18 +965,32 @@ export default function StaffDashboard({
         </div>
       </div>
 
-      {/* Confirmation Modal (Surety Check for Mark Attendance) */}
+      {/* Confirmation Modal (Mark Attendance / Clock Out) */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                <ShieldCheck className="h-6 w-6" />
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                  modalType === "clock_out"
+                    ? "bg-rose-50 text-rose-600"
+                    : "bg-indigo-50 text-indigo-600"
+                }`}
+              >
+                {modalType === "clock_out" ? (
+                  <LogOut className="h-6 w-6" />
+                ) : (
+                  <ShieldCheck className="h-6 w-6" />
+                )}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Confirm Attendance</h3>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {modalType === "clock_out" ? "Clock Out of Shift" : "Confirm Attendance"}
+                </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Are you sure you want to mark your attendance for today?
+                  {modalType === "clock_out"
+                    ? "Are you ready to clock out and end your shift for today?"
+                    : "Are you sure you want to mark your attendance for today?"}
                 </p>
               </div>
             </div>
@@ -920,7 +1002,28 @@ export default function StaffDashboard({
               <p>
                 <strong className="text-slate-900">Staff:</strong> {user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()}
               </p>
+              {modalType === "clock_out" && currentAttendance?.clockInTime && (
+                <p>
+                  <strong className="text-slate-900">Clock-In Time:</strong>{" "}
+                  {formatTime12(currentAttendance.clockInTime || currentAttendance.markedAt)}
+                </p>
+              )}
             </div>
+
+            {modalType === "clock_out" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  End of Shift Notes (Optional)
+                </label>
+                <textarea
+                  value={clockOutNotes}
+                  onChange={(e) => setClockOutNotes(e.target.value)}
+                  placeholder="Add any handover notes or remarks about today's shift..."
+                  rows={2}
+                  className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+            )}
 
             {attendanceFetcher.data?.error && (
               <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 flex items-center gap-2">
@@ -941,9 +1044,15 @@ export default function StaffDashboard({
                 type="button"
                 disabled={attendanceFetcher.state !== "idle"}
                 onClick={handleConfirmAttendance}
-                className="px-5 py-2 rounded-xl bg-[#1e3a5f] text-sm font-bold text-white hover:bg-[#162d4a] active:scale-95 transition disabled:opacity-50 cursor-pointer shadow-md shadow-[#1e3a5f]/20"
+                className={`px-5 py-2 rounded-xl text-sm font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-md ${
+                  modalType === "clock_out"
+                    ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                    : "bg-[#1e3a5f] hover:bg-[#162d4a] shadow-[#1e3a5f]/20"
+                }`}
               >
-                {attendanceFetcher.state !== "idle" ? "Marking..." : "Yes, Mark Attendance"}
+                {attendanceFetcher.state !== "idle"
+                  ? modalType === "clock_out" ? "Clocking Out..." : "Marking..."
+                  : modalType === "clock_out" ? "Confirm & Clock Out" : "Yes, Mark Attendance"}
               </button>
             </div>
           </div>

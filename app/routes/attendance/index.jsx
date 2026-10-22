@@ -156,7 +156,7 @@ export async function action({ request }) {
         date: todayMidnight,
         clockInTime: now,
         markedAt: now,
-        status: "marked",
+        status: "clocked_in",
         notes,
       });
 
@@ -165,6 +165,43 @@ export async function action({ request }) {
     } catch (err) {
       console.error("[mark_attendance] Error:", err.message, err);
       return data({ error: `Marking attendance failed: ${err.message}` }, { status: 500 });
+    }
+  }
+
+  // ── Clock Out ──────────────────────────────────────────────────────────────
+  if (intent === "clock_out") {
+    try {
+      const active = await Attendance.findOne({
+        user: user.userId,
+        date: { $gte: todayStart, $lte: todayEnd },
+      }).sort({ createdAt: -1 });
+
+      if (!active) {
+        return data({ error: "No attendance session found for today." }, { status: 400 });
+      }
+
+      if (active.clockOutTime) {
+        return data({ error: "You have already clocked out for today." }, { status: 400 });
+      }
+
+      const clockOutTime = new Date();
+      const startTime = active.clockInTime || active.markedAt || active.createdAt;
+      const durationMs = clockOutTime.getTime() - new Date(startTime).getTime();
+      const totalHours = Math.max(0, parseFloat((durationMs / (1000 * 60 * 60)).toFixed(2)));
+
+      active.clockOutTime = clockOutTime;
+      active.totalHours = totalHours;
+      active.status = "clocked_out";
+      if (notes) {
+        active.notes = active.notes ? `${active.notes}\n${notes}` : notes;
+      }
+      await active.save();
+
+      console.log("[clock_out] Clocked out attendance record:", active._id.toString());
+      return data({ success: true, action: "clock_out" });
+    } catch (err) {
+      console.error("[clock_out] Error:", err.message, err);
+      return data({ error: `Clock out failed: ${err.message}` }, { status: 500 });
     }
   }
 
